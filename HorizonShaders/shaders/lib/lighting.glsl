@@ -17,6 +17,7 @@
 
 #include "/lib/dimension.glsl"
 #include "/lib/shadows.glsl"
+#include "/lib/sky.glsl"
 #include "/lib/fog.glsl"
 
 // lmCoord arrives as a lightmap texture coordinate in [1/32, 31/32]; this maps
@@ -81,7 +82,11 @@ vec3 hzLighting(vec3 playerPos, vec3 viewNormal, vec2 lmCoord) {
 
 	vec3 shadow = hzShadowAt(playerPos, normal);
 
-	direct = hzDirectLight() * ndl * shadow;
+	// The cloud deck darkens the sun the same way the shadow map darkens a
+	// wall: hzCloudShadow samples the coverage field where the light ray
+	// enters the cloud base, so the shadows on the ground always match the
+	// clouds overhead.
+	direct = hzDirectLight() * ndl * shadow * hzCloudShadow(hzWorldPos(playerPos));
 #endif
 
 	//----------------------------- sky ambient --------------------------------

@@ -54,10 +54,11 @@
 
 // Shader side cloud layer (vanilla clouds are disabled in shaders.properties).
 #define CLOUDS
+#define CLOUD_SHADOWS
 
 #define CLOUD_QUALITY 1            //[0 1 2]
-#define CLOUD_DENSITY 0.55         //[0.25 0.40 0.55 0.70 0.85]
-#define CLOUD_ALTITUDE 128.0       //[96.0 128.0 160.0 192.0 256.0]
+#define CLOUD_DENSITY 0.62         //[0.25 0.40 0.55 0.62 0.70 0.85]
+#define CLOUD_ALTITUDE 192.0       //[96.0 128.0 160.0 192.0 256.0]
 #define CLOUD_SPEED 1.0            //[0.0 0.5 1.0 2.0 4.0]
 
 #define STARS
@@ -121,14 +122,17 @@
 	#define WATER_WAVE_COUNT 8
 #endif
 
+// Number of layers the cloud deck is integrated in, and octaves of the
+// coverage field. Two layers already put clouds overhead; four give the
+// deck a readable volume from below and from above.
 #if CLOUD_QUALITY == 0
-	#define CLOUD_STEPS 8
+	#define CLOUD_LAYERS 2
 	#define CLOUD_OCTAVES 3
 #elif CLOUD_QUALITY == 1
-	#define CLOUD_STEPS 14
+	#define CLOUD_LAYERS 3
 	#define CLOUD_OCTAVES 4
 #else
-	#define CLOUD_STEPS 22
+	#define CLOUD_LAYERS 4
 	#define CLOUD_OCTAVES 5
 #endif
 

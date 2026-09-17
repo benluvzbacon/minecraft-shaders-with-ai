@@ -23,7 +23,7 @@
 #define HZ_MOON_SOFTNESS 0.00035
 
 #define HZ_STAR_GRID    110.0
-#define HZ_CLOUD_SCALE  0.00085
+#define HZ_CLOUD_SCALE  0.0045
 #define HZ_CLOUD_MAX_DIST 12000.0
 
 // Direction in "celestial space": the world direction rotated about the world X
@@ -210,17 +210,74 @@ vec3 hzStarColour(vec3 worldDir) {
 }
 
 //------------------------------------ clouds ----------------------------------
+//
+//   The deck is a slab between CLOUD_ALTITUDE and CLOUD_ALTITUDE + thickness.
+//   A view ray is intersected with that slab and integrated in a few layers,
+//   each layer sampling the same warped fBm coverage field at its own point on
+//   the ground plane. Integrating along the ray - instead of sampling the plane
+//   once, like the first version of this pack did - is what puts clouds
+//   overhead: a single plane sample only ever shows whatever one point of the
+//   noise field happens to be, and everything else collapses into a thin band
+//   at the horizon.
+//
+//   The result is returned as (in-scattered light, transmittance) so the caller
+//   can composite it exactly: colour = colour * transmittance + scatter.
+//
+//------------------------------------------------------------------------------
 
+// Thickness of the cumulus deck in blocks.
+#define HZ_CLOUD_THICKNESS  46.0
+// How quickly light dies inside the deck, per unit density per metre.
+#define HZ_CLOUD_EXTINCTION 0.16
+// Altitude of the thin cirrus layer, as a multiple of the deck altitude.
+#define HZ_CIRRUS_ALTITUDE  2.7
+
+// Drift of the deck in blocks per second, converted into field space here so
+// the speed stays the same no matter what HZ_CLOUD_SCALE is.
 vec2 hzCloudWind() {
-	return vec2(frameTimeCounter * 0.42, frameTimeCounter * 0.07) * CLOUD_SPEED;
+	return vec2(frameTimeCounter * 4.0, frameTimeCounter * 0.7) * CLOUD_SPEED * HZ_CLOUD_SCALE;
 }
 
-float hzCloudDensity(vec2 uv) {
-	return hzFbm2(uv, CLOUD_OCTAVES);
+// Warped fBm coverage field, shared by the sky, the water reflection and the
+// shadows the deck throws on the ground, so that all three always agree.
+float hzCloudField(vec2 worldXZ) {
+	vec2 uv = worldXZ * HZ_CLOUD_SCALE + hzCloudWind();
+
+	// Domain warp: two cheap noise samples push the lookup around, which is what
+	// turns axis aligned blobs into weather.
+	vec2 warp = vec2(hzNoise2(uv * 0.31 + 7.31), hzNoise2(uv * 0.31 - 4.17)) - 0.5;
+
+	return hzFbm2(uv + warp * 0.80, CLOUD_OCTAVES);
 }
 
-// Returns vec4(colour, coverage). worldDir is a normalised world space
-// direction, worldOrigin the absolute world position of the camera.
+// Coverage 0..1 for a field value. CLOUD_DENSITY moves the threshold through
+// the upper half of the field's range - the field is a normalised fBm centred
+// on 0.5, so a threshold near 1 - density would leave almost everything above
+// it and paint a milky overcast sheet instead of broken clouds.
+float hzCloudCoverage(float field) {
+	float threshold = mix(0.68, 0.42, CLOUD_DENSITY);
+
+	return smoothstep(threshold, threshold + 0.15, field);
+}
+
+// Colour of the light that illuminates the deck: the sun by day, the moon and
+// the night sky after dusk, a grey sheet in a storm.
+vec3 hzCloudLightColour() {
+	vec3 day = hzSunColour() * 1.30;
+	vec3 night = vec3(0.135, 0.165, 0.260) * (0.35 + 0.65 * hzMoonIllumination());
+	vec3 colour = mix(night, day, hzDayFactor());
+
+	return mix(colour, vec3(0.30, 0.315, 0.345), rainStrength * 0.85);
+}
+
+// Ambient the deck is bathed in, brighter towards the top of the slab.
+vec3 hzCloudAmbient(float height) {
+	vec3 day = mix(vec3(0.22, 0.26, 0.34), vec3(0.50, 0.60, 0.78), height);
+	vec3 night = mix(vec3(0.020, 0.024, 0.038), vec3(0.055, 0.065, 0.100), height);
+
+	return mix(night, day, hzDayFactor());
+}
+
 vec4 hzCloudLayer(vec3 worldDir, vec3 worldOrigin) {
 #if !HZ_HAS_CLOUDS
 	return vec4(0.0);
@@ -229,52 +286,152 @@ vec4 hzCloudLayer(vec3 worldDir, vec3 worldOrigin) {
 	return vec4(0.0);
 #endif
 
-	float altitude = CLOUD_ALTITUDE;
-	float cameraY = worldOrigin.y;
+	vec3 direction = normalize(worldDir);
 
-	// Only rays that actually reach the cloud plane from below.
-	if (worldDir.y < 0.008) {
-		return vec4(0.0);
+	// Rays that travel along the deck never leave it; there is nothing sane to
+	// integrate there, and the fog owns the horizon anyway.
+	if (abs(direction.y) < 0.004) {
+		return vec4(0.0, 0.0, 0.0, 1.0);
 	}
 
-	float rayDistance = (altitude - cameraY) / worldDir.y;
+	float baseAltitude = CLOUD_ALTITUDE;
+	float topAltitude = CLOUD_ALTITUDE + HZ_CLOUD_THICKNESS;
 
-	if (rayDistance < 0.0 || rayDistance > HZ_CLOUD_MAX_DIST) {
-		return vec4(0.0);
+	// Slab intersection. Works from below and from above, so flying over the
+	// deck shows its top side instead of nothing.
+	float tBase = (baseAltitude - worldOrigin.y) / direction.y;
+	float tTop = (topAltitude - worldOrigin.y) / direction.y;
+	float enter = max(min(tBase, tTop), 0.0);
+	float exit = min(max(tBase, tTop), HZ_CLOUD_MAX_DIST);
+
+	if (exit <= enter) {
+		return vec4(0.0, 0.0, 0.0, 1.0);
 	}
 
-	vec2 position = worldOrigin.xz + worldDir.xz * rayDistance;
-	vec2 uv = position * HZ_CLOUD_SCALE + hzCloudWind();
-
-	float density = hzCloudDensity(uv);
-	float threshold = 1.0 - CLOUD_DENSITY;
-	float coverage = smoothstep(threshold, threshold + 0.22, density);
-
-	if (coverage <= 0.0) {
-		return vec4(0.0);
-	}
-
-	// Fake self shadowing by comparing the density with a sample pushed towards
-	// the sun. This is the classic two sample 2D cloud lighting trick.
 	vec3 sunWorld = normalize(hzWorldDirFromView(hzSunDir()));
-	vec2 sunOffset = sunWorld.xz * max(sunWorld.y, 0.0) * 0.055;
-	float sunSample = hzCloudDensity(uv + sunOffset);
-	float thickness = hzClamp01((density - sunSample) * 3.2);
-	float lighting = mix(0.34, 1.0, thickness);
+	float sunUp = max(sunWorld.y, 0.16);
+	vec3 lightColour = hzCloudLightColour();
+	// Metres of deck one layer sample stands for; extinction is per metre so
+	// grazing rays correctly thicken instead of every angle looking the same.
+	float stepLength = (exit - enter) / float(CLOUD_LAYERS);
 
-	// Clouds far away melt into the haze.
-	float distanceFade = 1.0 - smoothstep(HZ_CLOUD_MAX_DIST * 0.35, HZ_CLOUD_MAX_DIST * 0.95, rayDistance);
-	float horizonFade = smoothstep(0.008, 0.075, worldDir.y);
+	float transmittance = 1.0;
+	vec3 scatter = vec3(0.0);
 
-	vec3 dayColour = mix(vec3(1.05, 1.06, 1.10), hzSunColour() * 1.35, hzTwilightFactor() * 0.75);
-	vec3 nightColour = vec3(0.11, 0.13, 0.19);
-	vec3 cloudColour = mix(nightColour, dayColour, hzDayFactor()) * lighting;
+	for (int i = 0; i < CLOUD_LAYERS; i++) {
+		if (transmittance < 0.03) {
+			break;
+		}
 
-	// Storm clouds are dark and heavy.
-	cloudColour = mix(cloudColour, vec3(0.13, 0.14, 0.16) * lighting, rainStrength * 0.88);
-	coverage = mix(coverage, min(1.0, coverage + rainStrength * 0.55), rainStrength);
+		// Height of this layer inside the slab, 0 at the base, 1 at the top.
+		float height = (float(i) + 0.5) / float(CLOUD_LAYERS);
+		float layerT = mix(enter, exit, height);
+		vec3 point = worldOrigin + direction * layerT;
 
-	return vec4(cloudColour, coverage * distanceFade * horizonFade);
+		// Flat base, eroded top: the vertical profile is what reads as a cloud
+		// instead of a fog sheet.
+		float profile = smoothstep(0.0, 0.18, height) * (1.0 - smoothstep(0.55, 1.0, height));
+
+		float field = hzCloudField(point.xz);
+
+		// Detail erosion, stronger near the top so the crowns stay wispy.
+		float detail = hzFbm2(point.xz * (HZ_CLOUD_SCALE * 5.0) + hzCloudWind() * 1.6, 3);
+		// The erosion frequencies alias far away, so let the detail melt back
+		// into the base shape before the distance fade takes over.
+		float detailWeight = (0.10 + 0.55 * height * height) * (1.0 - smoothstep(2500.0, 7000.0, layerT));
+		float coverage = hzCloudCoverage(field - (1.0 - detail) * detailWeight);
+
+		// Storms close the sky in.
+		coverage = mix(coverage, min(1.0, coverage + 0.55), rainStrength);
+
+		float density = coverage * profile;
+
+		if (density <= 0.002) {
+			continue;
+		}
+
+		//----------------------------- lighting -----------------------------
+		// One sample towards the sun gives beer-lambert self shadowing; the
+		// powder term puts a silver lining on the sun side of the cloud.
+		vec2 sunPoint = point.xz + sunWorld.xz * (HZ_CLOUD_THICKNESS * (1.0 - height) / sunUp);
+		float optical = hzCloudCoverage(hzCloudField(sunPoint)) * (1.0 - height * 0.35);
+		float beer = exp(-optical * 3.0);
+		float powder = 1.0 - exp(-density * 2.4);
+		float forward = pow(clamp(dot(direction, sunWorld) * 0.5 + 0.5, 0.0, 1.0), 6.0);
+
+		vec3 luminance = lightColour * (beer * (0.50 + 0.90 * powder) + forward * beer * 1.10)
+			+ hzCloudAmbient(height);
+
+		float extinction = density * HZ_CLOUD_EXTINCTION * stepLength;
+		float absorbed = 1.0 - exp(-extinction);
+
+		scatter += transmittance * absorbed * luminance;
+		transmittance *= exp(-extinction);
+	}
+
+	//---------------------------------- cirrus --------------------------------
+	// A thin stretched layer far above the deck. One extra sample, and the sky
+	// stops looking like it has a single flat ceiling.
+	if (direction.y > 0.02 && transmittance > 0.05) {
+		float t = (CLOUD_ALTITUDE * HZ_CIRRUS_ALTITUDE - worldOrigin.y) / direction.y;
+
+		if (t > 0.0 && t < HZ_CLOUD_MAX_DIST) {
+			vec2 point = worldOrigin.xz + direction.xz * t;
+			vec2 uv = point * (HZ_CLOUD_SCALE * 2.1) + hzCloudWind() * 0.30;
+			float wisps = hzFbm2(uv * vec2(1.0, 2.7), 3);
+			float cirrus = smoothstep(0.60, 0.86, wisps) * 0.40;
+
+			cirrus = mix(cirrus, cirrus * 1.6, rainStrength);
+
+			if (cirrus > 0.002) {
+				vec3 luminance = lightColour * 0.85 + hzCloudAmbient(1.0);
+				float absorbed = cirrus * 0.55;
+
+				scatter += transmittance * absorbed * luminance;
+				transmittance *= 1.0 - absorbed;
+			}
+		}
+	}
+
+	//--------------------------- distance and horizon -------------------------
+	// The deck has to dissolve into the atmosphere before its edge can show, and
+	// stay out of the fog band right at the horizon.
+	float distanceFade = 1.0 - smoothstep(HZ_CLOUD_MAX_DIST * 0.30, HZ_CLOUD_MAX_DIST * 0.92, exit);
+	float horizonFade = smoothstep(0.004, 0.030, abs(direction.y));
+	float fade = distanceFade * horizonFade;
+
+	return vec4(scatter * fade, mix(1.0, transmittance, fade));
+}
+
+// Fraction of the direct light that survives the deck, for the ground below:
+// the coverage field sampled where the light ray from the shaded point enters
+// the cloud base. lib/lighting.glsl multiplies this into the sun term, which is
+// what makes clouds cast shadows without a single extra shadow map.
+float hzCloudShadow(vec3 worldPos) {
+#ifdef CLOUD_SHADOWS
+#if HZ_HAS_CLOUDS
+	vec3 lightWorld = normalize(hzWorldDirFromView(hzLightDir()));
+
+	if (lightWorld.y < 0.08) {
+		return 1.0;
+	}
+
+	float t = (CLOUD_ALTITUDE - worldPos.y) / lightWorld.y;
+
+	if (t < 0.0 || t > HZ_CLOUD_MAX_DIST * 0.5) {
+		return 1.0;
+	}
+
+	vec2 point = worldPos.xz + lightWorld.xz * t;
+	float coverage = hzCloudCoverage(hzCloudField(point));
+
+	coverage = mix(coverage, 1.0, rainStrength * 0.75);
+
+	return 1.0 - coverage * 0.60;
+#endif
+#endif
+
+	return 1.0;
 }
 
 //--------------------------------- composition --------------------------------
@@ -305,7 +462,9 @@ vec3 hzSky(vec3 viewDir) {
 	{
 		vec3 worldDir = normalize(hzWorldDirFromView(direction));
 		vec4 clouds = hzCloudLayer(worldDir, hzWorldPos(vec3(0.0)));
-		colour = mix(colour, clouds.rgb, clouds.a);
+
+		// in-scatter plus what the deck lets through
+		colour = colour * clouds.w + clouds.rgb;
 	}
 #endif
 
@@ -339,7 +498,8 @@ vec3 hzSkyReflection(vec3 viewDir) {
 	{
 		vec3 worldDir = normalize(hzWorldDirFromView(direction));
 		vec4 clouds = hzCloudLayer(worldDir, hzWorldPos(vec3(0.0)));
-		colour = mix(colour, clouds.rgb, clouds.a);
+
+		colour = colour * clouds.w + clouds.rgb;
 	}
 #endif
 

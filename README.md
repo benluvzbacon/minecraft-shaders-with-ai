@@ -131,12 +131,29 @@ procedural sky is always what you see.
 
 ### Clouds
 
-A ray marched layer at `CLOUD_ALTITUDE`, sampled with fBm noise
-(`CLOUD_OCTAVES`/`CLOUD_STEPS` from `CLOUD_QUALITY`), drifting with
-`CLOUD_SPEED`, covered according to `CLOUD_DENSITY`, lit by the same sun and
-ambient terms as the terrain. They are part of the sky, so terrain and entities
-occlude them correctly through the depth buffer. `clouds=off` in
-`shaders.properties` removes the vanilla cloud plane.
+A volumetric deck between `CLOUD_ALTITUDE` and `CLOUD_ALTITUDE + 46` blocks. A
+view ray is intersected with that slab and integrated in `CLOUD_LAYERS` layers
+(2/3/4 from `CLOUD_QUALITY`), each sampling a domain-warped fBm coverage field
+at its own point on the ground plane, shaped by a vertical profile with a flat
+base and an eroded crown. Each layer lights itself with a beer-lambert sample
+towards the sun plus a powder term for the silver lining, and a thin stretched
+cirrus layer sits far above the deck for depth. `CLOUD_DENSITY` moves the
+coverage threshold, `CLOUD_SPEED` drifts the field, `CLOUD_ALTITUDE` raises the
+slab.
+
+Because the deck is integrated along the ray instead of sampled once, clouds
+appear overhead and keep their perspective all the way to the horizon, where
+they dissolve into the atmospheric fog. From above the slab (flying, tall
+mountains) the same code shows the lit top side.
+
+`CLOUD_SHADOWS` (on by default) reuses the very same coverage field on the
+ground: `hzCloudShadow` samples it where the light ray from a shaded point
+enters the cloud base and multiplies the direct sun term, so the shadows moving
+over the terrain always match the clouds in the sky - with no extra shadow map.
+
+Clouds live in the sky program, so terrain and entities occlude them correctly
+through the depth buffer, and water reflects them through `hzSkyReflection`.
+`clouds=off` in `shaders.properties` removes the vanilla cloud plane.
 
 ### Fog
 
@@ -222,9 +239,9 @@ option by hand switches the profile selector to `Custom`.
 
 | Profile | Shadows | Water | Clouds | Post |
 | --- | --- | --- | --- | --- |
-| **Low** | off | simple, no refraction/reflection/foam | Low | no bloom, no vignette |
-| **Medium** (default) | 2048 px / 128 blocks, soft, coloured | Medium, refraction + reflection + foam | Medium | bloom |
-| **High** | 4096 px / 256 blocks, soft, coloured | High (8 wave layers) | High | bloom + temporal filter |
+| **Low** | off | simple, no refraction/reflection/foam | Low (2 layers, shadows) | no bloom, no vignette |
+| **Medium** (default) | 2048 px / 128 blocks, soft, coloured | Medium, refraction + reflection + foam | Medium (3 layers, shadows) | bloom |
+| **High** | 4096 px / 256 blocks, soft, coloured | High (8 wave layers) | High (4 layers, shadows) | bloom + temporal filter |
 
 ### Lighting
 `SUNLIGHT_STRENGTH`, `MOONLIGHT_STRENGTH`, `AMBIENT_STRENGTH`,
@@ -245,7 +262,8 @@ option by hand switches the profile selector to `Custom`.
 `SUN_PATH_TILT`
 
 ### Clouds
-`CLOUDS`, `CLOUD_QUALITY`, `CLOUD_DENSITY`, `CLOUD_ALTITUDE`, `CLOUD_SPEED`
+`CLOUDS`, `CLOUD_SHADOWS`, `CLOUD_QUALITY`, `CLOUD_DENSITY`, `CLOUD_ALTITUDE`,
+`CLOUD_SPEED`
 
 ### Post processing
 `BLOOM`, `BLOOM_QUALITY`, `BLOOM_STRENGTH`, `BLOOM_THRESHOLD`, `TONEMAP_MODE`,
@@ -414,9 +432,12 @@ was asked for:
 * **No voxelisation, no compute.** That means no global illumination, no
   path traced shadows and no volumetric light shafts; the sun glow and the
   atmospheric fog are analytic.
-* **Clouds do not cast shadows.** They live in the sky program, so they occlude
-  and are occluded correctly through the depth buffer, but there is no cloud
-  shadow term on the ground.
+* **Cloud shadows are analytic, not shadow mapped.** The ground shadow comes
+  from the same 2D coverage field the sky draws, sampled once per lit surface at
+  the point where the light ray enters the cloud base. It matches the clouds
+  overhead and moves with them, but it has no soft penumbra from cloud height
+  and it does not darken the shadow map itself, so it is invisible in reflected
+  or refracted light.
 * **The sky is fully procedural.** No vanilla sky texture, no custom skybox, no
   aurora; sunrise and sunset colours come from the sun height.
 * **The Nether has no directional light and no shadow map**, matching the fact

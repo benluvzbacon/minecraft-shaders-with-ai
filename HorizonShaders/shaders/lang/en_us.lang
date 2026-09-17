@@ -92,7 +92,9 @@ option.STARS.comment=Draws the procedural star field at night. Fades out towards
 option.STAR_DENSITY=Star Density
 option.STAR_DENSITY.comment=How many stars the field contains, and how sharply they are culled by brightness.
 option.CLOUDS=Shader Clouds
-option.CLOUDS.comment=Draws a volumetric cloud layer in the sky shader instead of the vanilla cloud plane.
+option.CLOUDS.comment=Draws a volumetric cloud deck in the sky shader instead of the vanilla cloud plane: a slab of warped noise integrated in layers, with lit crowns, dark bases and a thin cirrus layer above.
+option.CLOUD_SHADOWS=Cloud Shadows
+option.CLOUD_SHADOWS.comment=The cloud deck darkens the sunlight on the ground, sampled from the same coverage field the sky draws, so the shadows always match the clouds overhead. Costs one noise lookup per lit surface.
 
 #--- clouds --------------------------------------------------------------------
 option.CLOUD_QUALITY=Cloud Quality
@@ -100,8 +102,8 @@ option.CLOUD_QUALITY.comment=Number of ray march steps and noise octaves used by
 value.CLOUD_QUALITY.0=Low
 value.CLOUD_QUALITY.1=Medium
 value.CLOUD_QUALITY.2=High
-option.CLOUD_DENSITY=Cloud Density
-option.CLOUD_DENSITY.comment=Coverage of the cloud layer, from a few wisps to an overcast sky.
+option.CLOUD_DENSITY=Cloud Coverage
+option.CLOUD_DENSITY.comment=How much of the sky the deck covers, from scattered fair weather cumulus to a closed overcast sheet.
 option.CLOUD_ALTITUDE=Cloud Altitude
 option.CLOUD_ALTITUDE.comment=Height of the cloud layer above sea level, in blocks.
 option.CLOUD_SPEED=Cloud Speed
