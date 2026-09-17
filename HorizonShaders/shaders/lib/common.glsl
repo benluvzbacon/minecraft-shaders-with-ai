@@ -184,6 +184,12 @@ float hzHash11(float value) {
 	return fract(sin(value * 127.1) * 43758.5453123);
 }
 
+// Interleaved gradient noise: a smooth per-pixel dither sequence, used to
+// offset the cloud layer samples so the deck never bands into flat sheets.
+float hzInterleavedJitter(vec2 fragCoord) {
+	return fract(52.9829189 * fract(dot(fragCoord, vec2(0.06711056, 0.00583715))));
+}
+
 float hzHash21(vec2 value) {
 	return fract(sin(dot(value, vec2(127.1, 311.7))) * 43758.5453123);
 }

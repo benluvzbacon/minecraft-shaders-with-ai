@@ -81,6 +81,7 @@
 #define WATER_TURBIDITY 0.35       //[0.15 0.25 0.35 0.50 0.75]
 #define WATER_SHININESS 96.0       //[32.0 64.0 96.0 160.0 256.0]
 #define WATER_F0 0.02              //[0.02 0.04 0.08]
+#define WAVING_FOLIAGE
 #define WATER_FOAM
 
 //=================================< POST PROCESSING >==========================
@@ -123,17 +124,17 @@
 #endif
 
 // Number of layers the cloud deck is integrated in, and octaves of the
-// coverage field. Two layers already put clouds overhead; four give the
-// deck a readable volume from below and from above.
+// coverage field. Every extra layer and octave is silhouette detail: the
+// deck is dithered per pixel, so more layers also means less banding.
 #if CLOUD_QUALITY == 0
-	#define CLOUD_LAYERS 2
-	#define CLOUD_OCTAVES 3
-#elif CLOUD_QUALITY == 1
 	#define CLOUD_LAYERS 3
 	#define CLOUD_OCTAVES 4
-#else
+#elif CLOUD_QUALITY == 1
 	#define CLOUD_LAYERS 4
 	#define CLOUD_OCTAVES 5
+#else
+	#define CLOUD_LAYERS 6
+	#define CLOUD_OCTAVES 6
 #endif
 
 #if BLOOM_QUALITY == 0

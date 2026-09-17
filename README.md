@@ -133,13 +133,17 @@ procedural sky is always what you see.
 
 A volumetric deck between `CLOUD_ALTITUDE` and `CLOUD_ALTITUDE + 46` blocks. A
 view ray is intersected with that slab and integrated in `CLOUD_LAYERS` layers
-(2/3/4 from `CLOUD_QUALITY`), each sampling a domain-warped fBm coverage field
+(3/4/6 from `CLOUD_QUALITY`), each sampling a domain-warped fBm coverage field
 at its own point on the ground plane, shaped by a vertical profile with a flat
-base and an eroded crown. Each layer lights itself with a beer-lambert sample
-towards the sun plus a powder term for the silver lining, and a thin stretched
-cirrus layer sits far above the deck for depth. `CLOUD_DENSITY` moves the
-coverage threshold, `CLOUD_SPEED` drifts the field, `CLOUD_ALTITUDE` raises the
-slab.
+base and an eroded crown. Two erosion octaves carve the silhouette - a broad
+one for the body and a fine one for cauliflower edges - and each layer lights
+itself with a beer-lambert sample towards the sun, a powder term, a bright rim
+along the coverage edge and detail-mottled interiors, so cloud bodies never
+read as flat cutouts. The layer positions are dithered per pixel with
+interleaved gradient noise, which is what keeps a handful of layers from
+banding into flat sheets at grazing angles. A thin stretched cirrus layer sits
+far above the deck for depth. `CLOUD_DENSITY` moves the coverage threshold,
+`CLOUD_SPEED` drifts the field, `CLOUD_ALTITUDE` raises the slab.
 
 Because the deck is integrated along the ray instead of sampled once, clouds
 appear overhead and keep their perspective all the way to the horizon, where
@@ -154,6 +158,22 @@ over the terrain always match the clouds in the sky - with no extra shadow map.
 Clouds live in the sky program, so terrain and entities occlude them correctly
 through the depth buffer, and water reflects them through `hzSkyReflection`.
 `clouds=off` in `shaders.properties` removes the vanilla cloud plane.
+
+### Foliage
+
+Leaves, grasses, crops and flowers are listed under one material id in
+`block.properties`, which buys them three things a plain terrain pass cannot
+give them:
+
+* a shared wind sway in the terrain *and* shadow passes, so a moving canopy
+  keeps its shadow attached,
+* per-texel normal detail in the fragment shader, because a canopy shaded with
+  one flat normal per face reads as green cardboard instead of thousands of
+  leaves,
+* backlit translucency: sun or moon straight through a leaf glows warm, scaled
+  by sky light so it never leaks into caves.
+
+`WAVING_FOLIAGE` turns the sway off; the shading detail stays.
 
 ### Fog
 
@@ -239,9 +259,9 @@ option by hand switches the profile selector to `Custom`.
 
 | Profile | Shadows | Water | Clouds | Post |
 | --- | --- | --- | --- | --- |
-| **Low** | off | simple, no refraction/reflection/foam | Low (2 layers, shadows) | no bloom, no vignette |
-| **Medium** (default) | 2048 px / 128 blocks, soft, coloured | Medium, refraction + reflection + foam | Medium (3 layers, shadows) | bloom |
-| **High** | 4096 px / 256 blocks, soft, coloured | High (8 wave layers) | High (4 layers, shadows) | bloom + temporal filter |
+| **Low** | off | simple, no refraction/reflection/foam | Low (3 layers, shadows) | no bloom, no vignette |
+| **Medium** (default) | 2048 px / 128 blocks, soft, coloured | Medium, refraction + reflection + foam | Medium (4 layers, shadows) | bloom |
+| **High** | 4096 px / 256 blocks, soft, coloured | High (8 wave layers) | High (6 layers, shadows) | bloom + temporal filter |
 
 ### Lighting
 `SUNLIGHT_STRENGTH`, `MOONLIGHT_STRENGTH`, `AMBIENT_STRENGTH`,
@@ -264,6 +284,9 @@ option by hand switches the profile selector to `Custom`.
 ### Clouds
 `CLOUDS`, `CLOUD_SHADOWS`, `CLOUD_QUALITY`, `CLOUD_DENSITY`, `CLOUD_ALTITUDE`,
 `CLOUD_SPEED`
+
+### Foliage
+`WAVING_FOLIAGE`
 
 ### Post processing
 `BLOOM`, `BLOOM_QUALITY`, `BLOOM_STRENGTH`, `BLOOM_THRESHOLD`, `TONEMAP_MODE`,

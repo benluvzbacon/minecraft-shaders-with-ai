@@ -19,18 +19,26 @@
 //==============================================================================
 
 #include "/lib/color.glsl"
+#include "/lib/material.glsl"
 
 varying vec2 hzShadowTexCoord;
 varying vec4 hzShadowVertexColour;
 
 #if defined(HZ_STAGE_VERTEX)
 
+attribute vec4 mc_Entity;
+
 void main() {
 	// The shadow pass projection is set up by Iris (shadowProjection and
 	// shadowModelView already contain the sun path rotation, the distortion and
 	// the interval snapping), so the plain fixed function transform is exactly
 	// what is wanted here.
-	gl_Position = ftransform();
+	// Same sway as the terrain pass, or swaying leaves would leave their
+	// shadows behind. gl_Vertex is read only, hence the local copy.
+	vec4 vertex = gl_Vertex;
+	vertex.xyz += hzFoliageSway(vertex.xyz + cameraPosition, mc_Entity.x);
+
+	gl_Position = gl_ModelViewProjectionMatrix * vertex;
 
 	hzShadowTexCoord = (gl_TextureMatrix[0] * gl_MultiTexCoord0).xy;
 	hzShadowVertexColour = gl_Color;

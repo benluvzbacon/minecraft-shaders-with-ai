@@ -98,7 +98,7 @@ vec3 hzResolveWater(vec2 uv, vec3 background, vec3 viewPos, vec3 playerPos,
 #ifdef WATER_REFLECTION
 	{
 		vec3 reflectedDir = reflect(viewDir, normal);
-		vec3 skyReflection = hzSkyReflection(reflectedDir);
+		vec3 skyReflection = hzSkyReflection(reflectedDir, hzInterleavedJitter(gl_FragCoord.xy));
 		colour = mix(colour, skyReflection, fresnel);
 	}
 #endif

@@ -36,17 +36,24 @@ varying float hzBlockId;       // mc_Entity.x, only written by terrain programs
 
 #if defined(HZ_STAGE_VERTEX)
 
-void hzVertexCommon() {
-	gl_Position = ftransform();
+// The displaced overload exists for waving foliage: gl_Vertex is read
+// only, so a program that wants to move a vertex builds its own copy and
+// hands it in here.
+void hzVertexCommon(vec4 vertex) {
+	gl_Position = gl_ModelViewProjectionMatrix * vertex;
 
 	hzTexCoord = (gl_TextureMatrix[0] * gl_MultiTexCoord0).xy;
 	hzLmCoord = (gl_TextureMatrix[1] * gl_MultiTexCoord1).xy;
 	hzVertexColour = gl_Color;
 	hzNormal = normalize(gl_NormalMatrix * gl_Normal);
-	hzViewPos = (gl_ModelViewMatrix * gl_Vertex).xyz;
+	hzViewPos = (gl_ModelViewMatrix * vertex).xyz;
 	hzPlayerPos = (gbufferModelViewInverse * vec4(hzViewPos, 1.0)).xyz;
 	hzViewDistance = length(hzViewPos);
 	hzBlockId = -1.0;
+}
+
+void hzVertexCommon() {
+	hzVertexCommon(gl_Vertex);
 }
 
 #endif

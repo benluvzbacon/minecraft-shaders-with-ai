@@ -93,6 +93,9 @@ option.STAR_DENSITY=Star Density
 option.STAR_DENSITY.comment=How many stars the field contains, and how sharply they are culled by brightness.
 option.CLOUDS=Shader Clouds
 option.CLOUDS.comment=Draws a volumetric cloud deck in the sky shader instead of the vanilla cloud plane: a slab of warped noise integrated in layers, with lit crowns, dark bases and a thin cirrus layer above.
+option.WAVING_FOLIAGE=Waving Foliage
+option.WAVING_FOLIAGE.comment=Leaves, grass and crops sway in the wind, and glow warm when the sun or moon shines straight through them.
+
 option.CLOUD_SHADOWS=Cloud Shadows
 option.CLOUD_SHADOWS.comment=The cloud deck darkens the sunlight on the ground, sampled from the same coverage field the sky draws, so the shadows always match the clouds overhead. Costs one noise lookup per lit surface.
 

@@ -278,7 +278,7 @@ vec3 hzCloudAmbient(float height) {
 	return mix(night, day, hzDayFactor());
 }
 
-vec4 hzCloudLayer(vec3 worldDir, vec3 worldOrigin) {
+vec4 hzCloudLayer(vec3 worldDir, vec3 worldOrigin, float jitter) {
 #if !HZ_HAS_CLOUDS
 	return vec4(0.0);
 #endif
@@ -314,6 +314,9 @@ vec4 hzCloudLayer(vec3 worldDir, vec3 worldOrigin) {
 	// Metres of deck one layer sample stands for; extinction is per metre so
 	// grazing rays correctly thicken instead of every angle looking the same.
 	float stepLength = (exit - enter) / float(CLOUD_LAYERS);
+	// Per-pixel dither of the layer positions: without it the few layers
+	// band into flat sheets at grazing angles.
+	float jitterOffset = (jitter - 0.5) * stepLength;
 
 	float transmittance = 1.0;
 	vec3 scatter = vec3(0.0);
@@ -325,7 +328,7 @@ vec4 hzCloudLayer(vec3 worldDir, vec3 worldOrigin) {
 
 		// Height of this layer inside the slab, 0 at the base, 1 at the top.
 		float height = (float(i) + 0.5) / float(CLOUD_LAYERS);
-		float layerT = mix(enter, exit, height);
+		float layerT = mix(enter, exit, height) + jitterOffset;
 		vec3 point = worldOrigin + direction * layerT;
 
 		// Flat base, eroded top: the vertical profile is what reads as a cloud
@@ -339,7 +342,14 @@ vec4 hzCloudLayer(vec3 worldDir, vec3 worldOrigin) {
 		// The erosion frequencies alias far away, so let the detail melt back
 		// into the base shape before the distance fade takes over.
 		float detailWeight = (0.10 + 0.55 * height * height) * (1.0 - smoothstep(2500.0, 7000.0, layerT));
-		float coverage = hzCloudCoverage(field - (1.0 - detail) * detailWeight);
+
+		// A second, much finer erosion octave. This is what turns sticker
+		// silhouettes into cauliflower edges: two extra noise samples that
+		// melt back into the base shape before they can alias in the distance.
+		float fine = hzFbm2(point.xz * (HZ_CLOUD_SCALE * 13.0) + hzCloudWind() * 2.3, 2);
+		float fineWeight = 0.12 * height * height * (1.0 - smoothstep(1500.0, 4500.0, layerT));
+
+		float coverage = hzCloudCoverage(field - (1.0 - detail) * detailWeight - (1.0 - fine) * fineWeight);
 
 		// Storms close the sky in.
 		coverage = mix(coverage, min(1.0, coverage + 0.55), rainStrength);
@@ -359,8 +369,17 @@ vec4 hzCloudLayer(vec3 worldDir, vec3 worldOrigin) {
 		float powder = 1.0 - exp(-density * 2.4);
 		float forward = pow(clamp(dot(direction, sunWorld) * 0.5 + 0.5, 0.0, 1.0), 6.0);
 
+		// Bright rim along the coverage edge: the silver lining that makes a
+		// silhouette read as lit vapour instead of a cutout sprite.
+		float rim = smoothstep(0.0, 0.22, coverage) * (1.0 - smoothstep(0.22, 0.60, coverage));
+
 		vec3 luminance = lightColour * (beer * (0.50 + 0.90 * powder) + forward * beer * 1.10)
+			+ lightColour * rim * (0.30 + 0.50 * forward)
 			+ hzCloudAmbient(height);
+
+		// Mottle the interior with the detail field so cloud bodies are not
+		// flat grey cards.
+		luminance *= 0.82 + 0.36 * detail;
 
 		float extinction = density * HZ_CLOUD_EXTINCTION * stepLength;
 		float absorbed = 1.0 - exp(-extinction);
@@ -437,7 +456,7 @@ float hzCloudShadow(vec3 worldPos) {
 //--------------------------------- composition --------------------------------
 
 // Full sky for a view space direction.
-vec3 hzSky(vec3 viewDir) {
+vec3 hzSky(vec3 viewDir, float jitter) {
 	vec3 direction = normalize(viewDir);
 
 	vec3 colour = hzSkyGradient(direction);
@@ -461,7 +480,7 @@ vec3 hzSky(vec3 viewDir) {
 #if HZ_HAS_CLOUDS
 	{
 		vec3 worldDir = normalize(hzWorldDirFromView(direction));
-		vec4 clouds = hzCloudLayer(worldDir, hzWorldPos(vec3(0.0)));
+		vec4 clouds = hzCloudLayer(worldDir, hzWorldPos(vec3(0.0)), jitter);
 
 		// in-scatter plus what the deck lets through
 		colour = colour * clouds.w + clouds.rgb;
@@ -487,7 +506,7 @@ vec3 hzSky(vec3 viewDir) {
 
 // Cheaper variant used for reflections on water and other smooth surfaces: the
 // cloud layer is the expensive part, so it is skipped on the lowest setting.
-vec3 hzSkyReflection(vec3 viewDir) {
+vec3 hzSkyReflection(vec3 viewDir, float jitter) {
 	vec3 direction = normalize(viewDir);
 	vec3 colour = hzSkyGradient(direction);
 
@@ -497,7 +516,7 @@ vec3 hzSkyReflection(vec3 viewDir) {
 #if HZ_HAS_CLOUDS && WATER_QUALITY > 0
 	{
 		vec3 worldDir = normalize(hzWorldDirFromView(direction));
-		vec4 clouds = hzCloudLayer(worldDir, hzWorldPos(vec3(0.0)));
+		vec4 clouds = hzCloudLayer(worldDir, hzWorldPos(vec3(0.0)), jitter);
 
 		colour = colour * clouds.w + clouds.rgb;
 	}

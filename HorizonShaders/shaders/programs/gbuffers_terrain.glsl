@@ -22,13 +22,21 @@
 #include "/lib/gbuffers_common.glsl"
 #include "/lib/lighting.glsl"
 #include "/lib/material.glsl"
+// material.glsl is needed in the vertex stage as well for the foliage sway;
+// its include guard keeps the fragment stage from seeing it twice.
 
 #if defined(HZ_STAGE_VERTEX)
 
 attribute vec4 mc_Entity;
 
 void main() {
-	hzVertexCommon();
+	// Sway foliage before the common transform, so lighting, fog and the
+	// shadow map all see the moved vertex. gl_Vertex is read only, hence
+	// the local copy.
+	vec4 vertex = gl_Vertex;
+	vertex.xyz += hzFoliageSway(vertex.xyz + cameraPosition, mc_Entity.x);
+
+	hzVertexCommon(vertex);
 
 	hzBlockId = mc_Entity.x;
 }
@@ -45,11 +53,30 @@ void main() {
 	vec4 textureColour = texture2D(gtexture, hzTexCoord) * hzVertexColour;
 	vec4 albedo = hzAlbedoFromTexture(textureColour);
 
+	// Foliage gets per-texel normal detail: a canopy shaded with one flat
+	// normal per face reads as green cardboard, and this is the difference
+	// between that and thousands of individual leaves.
+	float foliage = float(hzIsFoliage(hzBlockId));
+	vec3 normal = hzNormal;
+	if (foliage > 0.5) {
+		vec2 texel = floor(hzTexCoord * 96.0);
+		normal = normalize(normal + (vec3(
+			hzHash21(texel),
+			hzHash21(texel + 19.19),
+			hzHash21(texel + 41.70)) - 0.5) * 0.9);
+	}
+
 	// Lava, torches, lamps and the like light themselves on top of the lightmap.
 	float emissive = hzEmissive(hzBlockId);
 
-	vec3 colour = hzShadeSurface(albedo.rgb, hzNormal, hzViewPos, hzPlayerPos,
+	vec3 colour = hzShadeSurface(albedo.rgb, normal, hzViewPos, hzPlayerPos,
 	                             hzLmCoord, emissive);
+
+	// Backlit translucency: sun or moon straight through a leaf glows warm,
+	// scaled by sky light so it never happens inside a cave.
+	float backlight = pow(clamp(dot(normalize(hzViewPos), hzLightDir()), 0.0, 1.0), 3.0);
+	colour += albedo.rgb * vec3(1.00, 0.78, 0.42) * backlight * foliage
+		* hzSkyLightCurve(hzLmCoord.y) * 0.55;
 
 	gl_FragColor = vec4(colour, textureColour.a);
 }
