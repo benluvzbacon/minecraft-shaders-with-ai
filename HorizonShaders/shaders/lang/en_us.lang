@@ -1,0 +1,171 @@
+#===============================================================================
+#
+#   Horizon Shaders  -  English (US) strings for the Iris settings menu
+#
+#   Iris reads shaders/lang/<code>.lang as a UTF-8 properties file (LanguageMap)
+#   and looks up the following keys (StringElementWidget, BooleanElementWidget,
+#   LinkElementWidget, ProfileElementWidget):
+#
+#     option.<NAME>            label of a boolean or value option
+#     option.<NAME>.comment    tooltip shown while hovering it
+#     value.<NAME>.<VALUE>     label of one allowed value of a value option
+#     screen.<ID>              label of a sub screen link
+#     screen.<ID>.comment      tooltip of a sub screen link
+#     profile.<NAME>           label of a quality profile
+#     profile.comment          tooltip of the profile selector
+#
+#   A missing key falls back to the raw option name or value, so nothing here is
+#   load bearing, but every option of the pack is translated.
+#
+#===============================================================================
+
+#--- screens -------------------------------------------------------------------
+screen.LIGHTING_SCREEN=Lighting
+screen.LIGHTING_SCREEN.comment=Sun, moon, sky and torch light.
+screen.SHADOW_SCREEN=Shadows
+screen.SHADOW_SCREEN.comment=The real shadow map: resolution, distance, softness and bias.
+screen.WATER_SCREEN=Water
+screen.WATER_SCREEN.comment=Waves, refraction, reflection and depth colour.
+screen.ATMOSPHERE_SCREEN=Atmosphere
+screen.ATMOSPHERE_SCREEN.comment=Fog, stars and the tilt of the sun path.
+screen.CLOUD_SCREEN=Clouds
+screen.CLOUD_SCREEN.comment=The shader side cloud layer.
+screen.POST_SCREEN=Post Processing
+screen.POST_SCREEN.comment=Bloom, tonemap, colour and the temporal filter.
+
+#--- profiles ------------------------------------------------------------------
+profile.comment=Quality presets. Changing any option by hand switches this to Custom.
+profile.LOW=Low
+profile.LOW.comment=No shadow map, no bloom, cheap clouds and simple water. For weak hardware or long render distances.
+profile.MEDIUM=Medium
+profile.MEDIUM.comment=2048 shadow map over 128 blocks, soft shadows, refraction, reflection and bloom. The shipped default.
+profile.HIGH=High
+profile.HIGH.comment=4096 shadow map over 256 blocks, parallax waves, wide bloom and the temporal filter.
+
+#--- shadows -------------------------------------------------------------------
+option.SHADOWS=Shadows
+option.SHADOWS.comment=Renders a real depth only shadow map from the sun and moon. Turning this off skips the whole shadow pass and lights everything as if the sky were unobstructed.
+option.SOFT_SHADOWS=Soft Shadows
+option.SOFT_SHADOWS.comment=Percentage closer filtering over several shadow map samples, which blurs shadow edges instead of leaving them aliased.
+option.COLORED_SHADOWS=Colored Shadows
+option.COLORED_SHADOWS.comment=Lets stained glass, water and leaves tint the light that passes through them, using the shadow color buffer.
+option.SHADOW_RESOLUTION=Shadow Resolution
+option.SHADOW_RESOLUTION.comment=Width and height of the shadow map in pixels. Higher values reduce blocky shadow edges and cost memory.
+option.SHADOW_DISTANCE=Shadow Distance
+option.SHADOW_DISTANCE.comment=How far from the camera shadows are rendered, in blocks. The shadow map covers a square of this size, so it is also its precision per block.
+option.SHADOW_SOFTNESS=Shadow Softness
+option.SHADOW_SOFTNESS.comment=Radius of the percentage closer filter in shadow map pixels, multiplied by the distance based blur of the sun disc.
+option.SHADOW_SAMPLES=Shadow Samples
+option.SHADOW_SAMPLES.comment=Samples per pixel used by the percentage closer filter.
+option.SHADOW_BIAS=Shadow Bias
+option.SHADOW_BIAS.comment=Pushes surfaces away from the light to stop them shadowing themselves. Raise it if shadow acne appears on flat ground, lower it if shadows detach from their blocks.
+option.SHADOW_DISTORTION=Shadow Distortion
+option.SHADOW_DISTORTION.comment=How much the shadow map is warped towards the camera to spend resolution nearby. Zero is a uniform orthographic map, one concentrates almost all of it close to the player.
+option.SUN_PATH_TILT=Sun Path Tilt
+option.SUN_PATH_TILT.comment=Tilts the path the sun and moon travel through the sky, in degrees. Negative values put the sun in the south, which is what vanilla and this pack use by default.
+
+#--- lighting ------------------------------------------------------------------
+option.SUNLIGHT_STRENGTH=Sunlight Strength
+option.SUNLIGHT_STRENGTH.comment=Brightness of direct sunlight, including the shadowed side of it.
+option.MOONLIGHT_STRENGTH=Moonlight Strength
+option.MOONLIGHT_STRENGTH.comment=Brightness of moonlight. Follows the lunar phase, so a new moon is darker than a full one.
+option.AMBIENT_STRENGTH=Ambient Strength
+option.AMBIENT_STRENGTH.comment=Sky light contribution: the ambient term that keeps shadowed and underground areas readable.
+option.BLOCKLIGHT_STRENGTH=Block Light Strength
+option.BLOCKLIGHT_STRENGTH.comment=Brightness of torches, lamps and every other block light source.
+option.BLOCKLIGHT_FALLOFF=Block Light Falloff
+option.BLOCKLIGHT_FALLOFF.comment=How quickly block light falls off with distance. Higher values give a tighter, warmer pool of light around a torch.
+option.HAND_LIGHT=Hand Light
+option.HAND_LIGHT.comment=Adds a small light to the held item so that the hands and the block they hold are readable in the dark.
+option.CAVE_ADAPT=Cave Adaptation
+option.CAVE_ADAPT.comment=Lets sky light leak into caves based on how bright the game considers the eye position, so a cave mouth is not a flat black wall.
+
+#--- atmosphere ----------------------------------------------------------------
+option.FOG_DENSITY=Fog Density
+option.FOG_DENSITY.comment=Multiplier on atmospheric and distance fog.
+option.UNDERWATER_DENSITY=Underwater Fog Density
+option.UNDERWATER_DENSITY.comment=Multiplier on the underwater and lava fog, which is much denser than air.
+option.BORDER_FOG=Border Fog
+option.BORDER_FOG.comment=Thickens fog at the very edge of the render distance to hide chunks popping in.
+option.STARS=Stars
+option.STARS.comment=Draws the procedural star field at night. Fades out towards sunrise and in bright fog.
+option.STAR_DENSITY=Star Density
+option.STAR_DENSITY.comment=How many stars the field contains, and how sharply they are culled by brightness.
+option.CLOUDS=Shader Clouds
+option.CLOUDS.comment=Draws a volumetric cloud layer in the sky shader instead of the vanilla cloud plane.
+
+#--- clouds --------------------------------------------------------------------
+option.CLOUD_QUALITY=Cloud Quality
+option.CLOUD_QUALITY.comment=Number of ray march steps and noise octaves used by the cloud layer.
+value.CLOUD_QUALITY.0=Low
+value.CLOUD_QUALITY.1=Medium
+value.CLOUD_QUALITY.2=High
+option.CLOUD_DENSITY=Cloud Density
+option.CLOUD_DENSITY.comment=Coverage of the cloud layer, from a few wisps to an overcast sky.
+option.CLOUD_ALTITUDE=Cloud Altitude
+option.CLOUD_ALTITUDE.comment=Height of the cloud layer above sea level, in blocks.
+option.CLOUD_SPEED=Cloud Speed
+option.CLOUD_SPEED.comment=How fast the cloud layer drifts. Zero freezes it.
+
+#--- water ---------------------------------------------------------------------
+option.WATER_QUALITY=Water Quality
+option.WATER_QUALITY.comment=Number of wave layers, and whether the surface gets a parallax correction on top.
+value.WATER_QUALITY.0=Low
+value.WATER_QUALITY.1=Medium
+value.WATER_QUALITY.2=High
+option.WATER_WAVES=Water Waves
+option.WATER_WAVES.comment=Animates the water surface normal. Turning this off leaves flat, mirror calm water.
+option.WATER_WAVE_STRENGTH=Wave Strength
+option.WATER_WAVE_STRENGTH.comment=Amplitude of the waves, which drives both the distortion of the refraction and the tilt of the surface normal.
+option.WATER_REFRACTION=Refraction
+option.WATER_REFRACTION.comment=Bends the underwater scene through the animated surface normal. Requires the deferred water pass.
+option.WATER_REFLECTION=Reflections
+option.WATER_REFLECTION.comment=Blends a fresnel weighted sky reflection into the surface, stronger at grazing angles.
+option.WATER_FOAM=Shore Foam
+option.WATER_FOAM.comment=Draws foam where water gets shallow, and lights it with the scene.
+option.WATER_ABSORPTION=Absorption
+option.WATER_ABSORPTION.comment=How strongly water absorbs light with depth. Higher values turn deep water dark much faster.
+option.WATER_TURBIDITY=Turbidity
+option.WATER_TURBIDITY.comment=How much suspended matter scatters light inside the water, which lightens and fogs shallow bodies.
+option.WATER_SHININESS=Specular Sharpness
+option.WATER_SHININESS.comment=Concentration of the sun highlight on the surface. Higher values give a tighter, brighter glint.
+option.WATER_F0=Surface Reflectance
+option.WATER_F0.comment=Reflectance of calm water seen straight on, which sets the floor of the fresnel term.
+
+#--- post processing -----------------------------------------------------------
+option.BLOOM=Bloom
+option.BLOOM.comment=Spreads bright pixels into a blurred glow over the image. Disabling it also removes the bloom passes from the program set.
+option.BLOOM_QUALITY=Bloom Quality
+option.BLOOM_QUALITY.comment=Blur radius, and whether a second, much wider blur is added on top of the first.
+value.BLOOM_QUALITY.0=Low
+value.BLOOM_QUALITY.1=Medium
+value.BLOOM_QUALITY.2=High
+option.BLOOM_STRENGTH=Bloom Strength
+option.BLOOM_STRENGTH.comment=How much of the blurred glow is added back to the image.
+option.BLOOM_THRESHOLD=Bloom Threshold
+option.BLOOM_THRESHOLD.comment=Brightness a pixel has to reach before it contributes to the glow.
+option.TONEMAP_MODE=Tonemap
+option.TONEMAP_MODE.comment=Curve that maps the high dynamic range scene into displayable values.
+value.TONEMAP_MODE.0=Reinhard
+value.TONEMAP_MODE.1=ACES
+value.TONEMAP_MODE.2=Hable
+option.EXPOSURE=Exposure
+option.EXPOSURE.comment=Multiplies the scene before the tonemap curve, brightening or darkening everything at once.
+option.SATURATION=Saturation
+option.SATURATION.comment=Intensity of the colours, applied on luminance so that brightness is preserved.
+option.CONTRAST=Contrast
+option.CONTRAST.comment=Pushes values away from middle grey.
+option.GAMMA=Gamma
+option.GAMMA.comment=Gamma of the display encode applied in the final pass.
+option.VIGNETTE=Vignette
+option.VIGNETTE.comment=Darkens the corners of the image.
+option.VIGNETTE_STRENGTH=Vignette Strength
+option.VIGNETTE_STRENGTH.comment=How much the corners are darkened.
+option.COLOR_GRADING=Color Grading
+option.COLOR_GRADING.comment=Applies a subtle lift, gamma and gain tint for a warmer, slightly desaturated look.
+option.TEMPORAL_SMOOTHING=Temporal Smoothing
+option.TEMPORAL_SMOOTHING.comment=Blends the current frame with a reprojected previous frame to reduce flicker on thin geometry and shadow edges. Adds a history buffer and a small amount of ghosting on fast motion.
+option.TEMPORAL_STRENGTH=Temporal Strength
+option.TEMPORAL_STRENGTH.comment=Weight of the history buffer. Higher values are smoother and ghost more, lower values react faster.
+option.DITHERING=Dithering
+option.DITHERING.comment=Adds a tiny ordered noise before the display encode to break up banding in smooth gradients such as the sky and fog.
