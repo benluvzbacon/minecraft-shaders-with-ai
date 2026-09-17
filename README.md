@@ -96,17 +96,26 @@ outside fullscreen passes).
    touch the scene. Depth is still written, which is what the next stage keys on.
 2. **`deferred`** resolves those pixels: it refracts the already rendered scene
    through the animated normal using `depthtex1` (rejecting samples that cross
-   the water surface, so the hand or rain over water does not smear), applies
-   depth based absorption and turbidity, blends a fresnel weighted sky
-   reflection, adds the shadow aware sun specular, lights the foam and applies
-   fog.
+   the water surface, so the hand or rain over water does not smear), then
+   hides the background behind a depth driven opacity curve - a shore edge
+   stays see-through, a couple of blocks down the body takes over, so water
+   reads as water instead of as glass. On top of that: depth based absorption
+   and turbidity (turquoise shallows into deep teal), a fresnel weighted sky
+   reflection with a reflectance floor so a calm surface keeps its sheen even
+   straight down, a two-lobe shadow aware sun specular for the glitter path,
+   backlit glow on wave crests, lit foam and fog.
 
-Waves come from several scrolling sine/noise layers (`WATER_QUALITY` sets how
-many: 3, 5 or 8), `WATER_WAVE_STRENGTH` scales them,
-`WATER_SHININESS` and `WATER_F0` shape the highlight, `WATER_ABSORPTION` and
-`WATER_TURBIDITY` shape the body colour, and `WATER_REFRACTION` /
-`WATER_REFLECTION` / `WATER_FOAM` turn the individual parts off. Underwater and
-in lava, `hzApplyMediaFog` takes over with its own density and colour.
+Waves come from several scrolling sine layers plus two close-range ripple
+octaves (`WATER_QUALITY` sets how many: 3, 5 or 8), `WATER_WAVE_STRENGTH`
+scales them, `WATER_SHININESS` and `WATER_F0` shape the highlight,
+`WATER_ABSORPTION` and `WATER_TURBIDITY` shape both the body colour and how
+quickly the water turns opaque, and `WATER_REFRACTION` / `WATER_REFLECTION` /
+`WATER_FOAM` turn the individual parts off. Underwater and in lava,
+`hzApplyMediaFog` takes over with its own density and colour.
+
+`tools/preview_water.py` renders this surface offline (numpy port of the same
+formulas over a plane with a varying bottom depth) so water tweaks can be
+judged from a PNG instead of a bucket in game.
 
 Lava and ice are recognised by their block ids and deliberately skip the water
 buffers.

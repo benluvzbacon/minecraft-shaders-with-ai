@@ -45,11 +45,14 @@ vec2 hzWaterGradient(vec2 worldXZ, float viewDistance) {
 		gradient += direction * (cos(phase) * wave.w * wave.z * chop * fade);
 	}
 
-	// Fine ripples on top, only close up.
-	float rippleFade = exp(-viewDistance * 0.09);
+	// Fine ripples on top, two octaves, only close up. These are what the
+	// sun glint and the sky reflection dance on.
+	float rippleFade = exp(-viewDistance * 0.07);
 	vec2 rippleUv = worldXZ * 2.6 + vec2(frameTimeCounter * 0.31, -frameTimeCounter * 0.19);
-	gradient.x += (hzNoise2(rippleUv) - 0.5) * 0.16 * rippleFade;
-	gradient.y += (hzNoise2(rippleUv + 37.4) - 0.5) * 0.16 * rippleFade;
+	gradient.x += (hzNoise2(rippleUv) - 0.5) * 0.30 * rippleFade;
+	gradient.y += (hzNoise2(rippleUv + 37.4) - 0.5) * 0.30 * rippleFade;
+	gradient.x += (hzNoise2(rippleUv * 2.7 + 11.3) - 0.5) * 0.14 * rippleFade;
+	gradient.y += (hzNoise2(rippleUv * 2.7 + 53.1) - 0.5) * 0.14 * rippleFade;
 #endif
 
 	return gradient;
@@ -86,15 +89,29 @@ float hzFresnel(float cosTheta, float f0) {
 
 // Beer-Lambert absorption of the light travelling through the water body.
 vec3 hzWaterTransmittance(float depth) {
-	vec3 absorption = vec3(0.46, 0.105, 0.075);
-	return exp(-absorption * max(depth, 0.0) * WATER_ABSORPTION);
+	vec3 absorption = vec3(0.55, 0.16, 0.12);
+	return exp(-absorption * max(depth, 0.0) * WATER_ABSORPTION * 2.0);
 }
 
-// Colour of the water itself, the more of it there is the more it dominates.
+// How much of the background the water body hides at this depth. Zero at
+// the very edge of a shore, close to one a couple of blocks down: water
+// should read as a surface with a body under it, not as a glass sheet
+// stretched over the river bed.
+float hzWaterOpacity(float depth) {
+	return 1.0 - exp(-max(depth, 0.0) * (0.55 * WATER_ABSORPTION + WATER_TURBIDITY * 1.6));
+}
+
+// Colour of the water itself: bright turquoise in the shallows where the
+// bottom still lights it, deep teal where the light is gone.
 vec3 hzWaterBody(float depth) {
-	vec3 tint = vec3(0.020, 0.145, 0.185);
-	float density = 1.0 - exp(-max(depth, 0.0) * WATER_TURBIDITY * 1.4);
-	return tint * density * (0.35 + 0.9 * hzDayFactor() + ambientLight);
+	vec3 shallow = vec3(0.055, 0.300, 0.320);
+	vec3 deep = vec3(0.012, 0.085, 0.130);
+	float towardDeep = 1.0 - exp(-max(depth, 0.0) * 0.35);
+	float density = 1.0 - exp(-max(depth, 0.0) * WATER_TURBIDITY * 2.2);
+
+	return mix(shallow, deep, towardDeep)
+		* (0.25 + 0.95 * hzDayFactor() + ambientLight)
+		* (0.35 + 0.65 * density);
 }
 
 // Foam at the shoreline and on wave crests.
@@ -103,8 +120,8 @@ float hzFoam(float depth, float height) {
 	return 0.0;
 #else
 	float shore = 1.0 - smoothstep(0.05, 0.42, depth);
-	float crest = smoothstep(0.10, 0.30, height + rainStrength * 0.12);
-	return hzClamp01(shore * 0.55 + crest * shore * 1.4 + crest * 0.10);
+	float crest = smoothstep(0.14, 0.34, height + rainStrength * 0.12);
+	return hzClamp01(shore * 0.75 + crest * shore * 1.4 + crest * 0.06);
 #endif
 }
 

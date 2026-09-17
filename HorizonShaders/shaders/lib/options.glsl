@@ -78,7 +78,7 @@
 #define WATER_REFRACTION
 #define WATER_REFLECTION
 #define WATER_ABSORPTION 1.0       //[0.5 0.75 1.0 1.5 2.0]
-#define WATER_TURBIDITY 0.35       //[0.15 0.25 0.35 0.50 0.75]
+#define WATER_TURBIDITY 0.50       //[0.15 0.25 0.35 0.50 0.75]
 #define WATER_SHININESS 96.0       //[32.0 64.0 96.0 160.0 256.0]
 #define WATER_F0 0.02              //[0.02 0.04 0.08]
 #define WAVING_FOLIAGE

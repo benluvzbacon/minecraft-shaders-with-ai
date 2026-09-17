@@ -89,11 +89,21 @@ vec3 hzResolveWater(vec2 uv, vec3 background, vec3 viewPos, vec3 playerPos,
 	vec3 shadow = vec3(1.0);
 	vec3 surfaceLight = hzLightingSkyOnly(playerPos, normal, skyLightLevel, shadow);
 
-	vec3 colour = refracted * transmittance + body * surfaceLight;
+	// The body swallows the background progressively with depth, so a pond
+	// reads as water instead of as a window into its bed.
+	float opacity = hzWaterOpacity(waterDepth);
+	vec3 colour = refracted * transmittance * (1.0 - opacity * 0.85)
+		+ body * surfaceLight * (0.45 + 0.55 * opacity);
 
 	//--------------------------------------------------------------- reflection --
 	float cosTheta = max(dot(-viewDir, normal), 0.0);
 	float fresnel = hzFresnel(cosTheta, WATER_F0);
+
+	// A reflectance floor: Schlick with water's f0 of 0.02 makes a calm
+	// surface literally invisible when you look straight down at it. The
+	// floor keeps a sheen on every pixel of water, and still reaches 1 at
+	// grazing angles like the real term does.
+	fresnel = max(fresnel, 0.14 + 0.10 * (1.0 - cosTheta));
 
 #ifdef WATER_REFLECTION
 	{
@@ -101,15 +111,30 @@ vec3 hzResolveWater(vec2 uv, vec3 background, vec3 viewPos, vec3 playerPos,
 		vec3 skyReflection = hzSkyReflection(reflectedDir, hzInterleavedJitter(gl_FragCoord.xy));
 		colour = mix(colour, skyReflection, fresnel);
 	}
+#else
+	// Without the sky reflection pass the floor still has to show: a flat
+	// ambient sheen stands in for the sky the surface would mirror.
+	colour = mix(colour, hzAmbientColour() * (0.6 + 0.8 * skyLightLevel), fresnel * 0.5);
 #endif
 
 	// Shadow mapped specular highlight: the sun glint on the wave crests.
 #if HZ_HAS_SUN || HZ_DIM_ID == 2
 	{
-		float specular = hzSpecular(normal, -viewDir, hzLightDir(), WATER_SHININESS);
-		colour += hzDirectLight() * (specular * shadow * hzSkyLightCurve(skyLightLevel));
+		// Two lobes: a tight one for the glitter path and a broad one for the
+		// soft sheen around it, which is what makes sunlight on water read as
+		// sunlight on water.
+		float specular = hzSpecular(normal, -viewDir, hzLightDir(), WATER_SHININESS)
+			+ hzSpecular(normal, -viewDir, hzLightDir(), WATER_SHININESS * 0.22) * 0.30;
+		colour += hzDirectLight() * (specular * 2.2 * shadow * hzSkyLightCurve(skyLightLevel));
 	}
 #endif
+
+	//------------------------------------------------------- crest translucency --
+	// Wave crests glow from inside when the light comes from behind them,
+	// the way thin water always does.
+	float crest = smoothstep(0.14, 0.34, hzWaterHeight(hzWorldPos(playerPos).xz));
+	float crestBacklight = pow(clamp(dot(viewDir, hzLightDir()), 0.0, 1.0), 2.0);
+	colour += crest * crestBacklight * vec3(0.10, 0.45, 0.42) * 0.55 * skyLightLevel;
 
 	//---------------------------------------------------------------------- foam --
 	float foam = tintData.a;
