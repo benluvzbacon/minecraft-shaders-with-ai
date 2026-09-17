@@ -1,0 +1,20 @@
+# Built artifacts. tools/build_zip.py writes the pack archive here; CI uploads it
+# as a workflow artifact instead of committing it.
+dist/
+
+# Python
+__pycache__/
+*.py[cod]
+
+# Editors and operating systems
+*.swp
+*.bak
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+
+# Convenience copy of the built pack at the repository root, so it can be
+# downloaded without running the build. tools/build_zip.py writes the canonical
+# copy to dist/.
+/HorizonShaders.zip
