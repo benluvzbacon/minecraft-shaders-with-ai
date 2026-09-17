@@ -13,9 +13,10 @@
 //   colour a refracted ray would need simply is not readable here. Instead this
 //   program fills a small material buffer and leaves the scene colour alone:
 //
-//     colortex0  vec4(0.0) - with the vanilla translucent blend state
-//                (SRC_ALPHA, ONE_MINUS_SRC_ALPHA) an alpha of zero is a no-op,
-//                while the depth buffer still records the surface position.
+//     colortex0  a depth tinted, partly transparent sheet of water - with the
+//                vanilla translucent blend state (SRC_ALPHA,
+//                ONE_MINUS_SRC_ALPHA) this alone already leaves visible
+//                water, and the depth buffer records the surface position.
 //     colortex3  view space normal, surface depth and sky light level
 //     colortex5  biome water tint and foam coverage
 //
@@ -100,7 +101,12 @@ void main() {
 	float surfaceDepth = hzLinearDepth01(gl_FragCoord.z);
 	float skyLight = hzLightLevels(hzLmCoord).y;
 
-	gl_FragData[0] = vec4(0.0);
+	// Fallback body: with vanilla blending this leaves a tinted, partly
+	// transparent sheet of water even if no later pass resolves the surface.
+	// deferred overwrites these pixels entirely when it runs, so the two
+	// never stack into a double tint.
+	float opacity = hzWaterOpacity(waterDepth);
+	gl_FragData[0] = vec4(hzWaterBody(waterDepth) * 2.4, opacity * 0.35);
 	gl_FragData[1] = hzEncodeWaterNormal(viewNormal, surfaceDepth, skyLight);
 	gl_FragData[2] = vec4(tint, foam);
 }

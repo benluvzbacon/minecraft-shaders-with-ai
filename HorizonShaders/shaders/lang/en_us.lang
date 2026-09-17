@@ -81,12 +81,10 @@ option.CAVE_ADAPT=Cave Adaptation
 option.CAVE_ADAPT.comment=Lets sky light leak into caves based on how bright the game considers the eye position, so a cave mouth is not a flat black wall.
 
 #--- atmosphere ----------------------------------------------------------------
-option.FOG_DENSITY=Fog Density
-option.FOG_DENSITY.comment=Multiplier on atmospheric and distance fog.
+option.ATMOSPHERE_STRENGTH=Atmosphere Strength
+option.ATMOSPHERE_STRENGTH.comment=How strongly sunrise, sunset and horizon colouring tint the haze. Never reduces visibility.
 option.UNDERWATER_DENSITY=Underwater Fog Density
 option.UNDERWATER_DENSITY.comment=Multiplier on the underwater and lava fog, which is much denser than air.
-option.BORDER_FOG=Border Fog
-option.BORDER_FOG.comment=Thickens fog at the very edge of the render distance to hide chunks popping in.
 option.STARS=Stars
 option.STARS.comment=Draws the procedural star field at night. Fades out towards sunrise and in bright fog.
 option.STAR_DENSITY=Star Density

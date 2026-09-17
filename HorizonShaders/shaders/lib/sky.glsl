@@ -17,8 +17,8 @@
 #include "/lib/dimension.glsl"
 
 // Apparent radius of the sun and the moon, as a cosine of the view angle.
-#define HZ_SUN_COS      0.99885
-#define HZ_SUN_SOFTNESS 0.00045
+#define HZ_SUN_COS      0.99980
+#define HZ_SUN_SOFTNESS 0.00020
 #define HZ_MOON_COS     0.99935
 #define HZ_MOON_SOFTNESS 0.00035
 
@@ -58,7 +58,7 @@ vec3 hzSkyGradient(vec3 viewDir) {
 	return hzFogColour();
 #else
 	vec3 zenith = mix(vec3(0.0055, 0.0105, 0.0270), vec3(0.105, 0.275, 0.660), hzDayFactor());
-	vec3 horizon = mix(vec3(0.0260, 0.0400, 0.0780), vec3(0.560, 0.710, 0.910), hzDayFactor());
+	vec3 horizon = mix(vec3(0.0260, 0.0400, 0.0780), vec3(0.430, 0.580, 0.800), hzDayFactor());
 
 	zenith = mix(zenith, vec3(0.140, 0.150, 0.390), hzTwilightFactor() * 0.80);
 	horizon = mix(horizon, vec3(0.920, 0.430, 0.190), hzTwilightFactor() * 0.95);
@@ -91,8 +91,10 @@ vec3 hzSunDisc(vec3 viewDir) {
 	float visibility = 1.0 - rainStrength;
 	vec3 colour = hzSunColour();
 
-	vec3 result = colour * (disc * 17.0 + innerGlow * 0.85);
-	result += colour * (outerGlow * 0.045 * hzDayFactor());
+	// A sun disc is ~0.5 degrees across in reality; a small, controlled disc
+	// with a modest halo reads as bright without becoming a white blob.
+	vec3 result = colour * (disc * 12.0 + innerGlow * 0.45);
+	result += colour * (outerGlow * 0.030 * hzDayFactor());
 
 	return result * visibility;
 }
@@ -247,7 +249,7 @@ float hzCloudField(vec2 worldXZ) {
 	// turns axis aligned blobs into weather.
 	vec2 warp = vec2(hzNoise2(uv * 0.31 + 7.31), hzNoise2(uv * 0.31 - 4.17)) - 0.5;
 
-	return hzFbm2(uv + warp * 0.80, CLOUD_OCTAVES);
+	return hzFbm2(uv + warp * 0.60, CLOUD_OCTAVES);
 }
 
 // Coverage 0..1 for a field value. CLOUD_DENSITY moves the threshold through
@@ -263,7 +265,7 @@ float hzCloudCoverage(float field) {
 // Colour of the light that illuminates the deck: the sun by day, the moon and
 // the night sky after dusk, a grey sheet in a storm.
 vec3 hzCloudLightColour() {
-	vec3 day = hzSunColour() * 1.30;
+	vec3 day = hzSunColour() * 0.95;
 	vec3 night = vec3(0.135, 0.165, 0.260) * (0.35 + 0.65 * hzMoonIllumination());
 	vec3 colour = mix(night, day, hzDayFactor());
 
@@ -272,7 +274,7 @@ vec3 hzCloudLightColour() {
 
 // Ambient the deck is bathed in, brighter towards the top of the slab.
 vec3 hzCloudAmbient(float height) {
-	vec3 day = mix(vec3(0.22, 0.26, 0.34), vec3(0.50, 0.60, 0.78), height);
+	vec3 day = mix(vec3(0.16, 0.20, 0.28), vec3(0.40, 0.50, 0.66), height);
 	vec3 night = mix(vec3(0.020, 0.024, 0.038), vec3(0.055, 0.065, 0.100), height);
 
 	return mix(night, day, hzDayFactor());
@@ -316,7 +318,10 @@ vec4 hzCloudLayer(vec3 worldDir, vec3 worldOrigin, float jitter) {
 	float stepLength = (exit - enter) / float(CLOUD_LAYERS);
 	// Per-pixel dither of the layer positions: without it the few layers
 	// band into flat sheets at grazing angles.
-	float jitterOffset = (jitter - 0.5) * stepLength;
+	// Clamped in world units: an unclamped fraction of the step length moves
+	// samples by kilometres at grazing angles, which is exactly what turns
+	// the deck into radial streaks fanning out from the screen centre.
+	float jitterOffset = (jitter - 0.5) * min(stepLength, 10.0);
 
 	float transmittance = 1.0;
 	vec3 scatter = vec3(0.0);

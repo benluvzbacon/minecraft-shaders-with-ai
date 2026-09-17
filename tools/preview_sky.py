@@ -32,6 +32,7 @@ CLOUD_DENSITY = float(sys.argv[1]) if len(sys.argv) > 1 else 0.62
 CLOUD_LAYERS = int(sys.argv[2]) if len(sys.argv) > 2 else 4
 CLOUD_OCTAVES = int(sys.argv[3]) if len(sys.argv) > 3 else 5
 OUT = sys.argv[4] if len(sys.argv) > 4 else "/tmp/sky.png"
+PITCH = float(sys.argv[5]) if len(sys.argv) > 5 else 28.0
 
 W, H = 960, 540
 WIND = np.array([4.5, 0.79])        # frameTimeCounter * (4.0, 0.7) * speed * scale
@@ -88,7 +89,7 @@ def field(px, py):
     uy = py * HZ_CLOUD_SCALE + WIND[1]
     wx = noise2(ux * 0.31 + 7.31, uy * 0.31 + 7.31) - 0.5
     wy = noise2(ux * 0.31 - 4.17, uy * 0.31 - 4.17) - 0.5
-    return fbm2(ux + wx * 0.80, uy + wy * 0.80, CLOUD_OCTAVES)
+    return fbm2(ux + wx * 0.60, uy + wy * 0.60, CLOUD_OCTAVES)
 
 
 def coverage(f):
@@ -98,11 +99,11 @@ def coverage(f):
 
 # ---------------- camera rays -------------------------------------------------
 u = (np.arange(W) + 0.5) / W * 2.0 - 1.0
-v = (np.arange(H) + 0.5) / H * 2.0 - 1.0
+v = 1.0 - (np.arange(H) + 0.5) / H * 2.0
 uu, vv = np.meshgrid(u, v)
 
 fov = math.radians(75.0)
-pitch = math.radians(28.0)
+pitch = math.radians(PITCH)
 aspect = W / H
 
 dx = uu * math.tan(fov / 2.0) * aspect
@@ -119,7 +120,7 @@ dirs = dirs / np.linalg.norm(dirs, axis=-1, keepdims=True)
 up = dirs[..., 1]
 horizon_fade = np.power(1.0 - np.clip(up, 0.0, 1.0), 3.4)
 zenith = np.array([0.105, 0.275, 0.660])
-horizon = np.array([0.560, 0.710, 0.910])
+horizon = np.array([0.430, 0.580, 0.800])
 colour = zenith[None, None, :] * (1 - horizon_fade)[..., None] \
     + horizon[None, None, :] * horizon_fade[..., None]
 
@@ -137,7 +138,7 @@ exit_ = np.minimum(np.maximum(t_base, t_top), HZ_CLOUD_MAX_DIST)
 valid = valid & (exit_ > enter)
 
 sun_up = max(SUN[1], 0.16)
-light_colour = np.array([1.00, 0.94, 0.84]) * 1.30
+light_colour = np.array([1.00, 0.94, 0.84]) * 0.95
 step_length = np.maximum(exit_ - enter, 0.0) / CLOUD_LAYERS
 
 for i in range(CLOUD_LAYERS):
@@ -167,7 +168,7 @@ for i in range(CLOUD_LAYERS):
 
     rim = sstep(0.0, 0.22, cov) * (1.0 - sstep(0.22, 0.60, cov))
 
-    amb = np.array([0.22, 0.26, 0.34]) * (1 - height) + np.array([0.50, 0.60, 0.78]) * height
+    amb = np.array([0.16, 0.20, 0.28]) * (1 - height) + np.array([0.40, 0.50, 0.66]) * height
     luminance = light_colour[None, None, :] * (beer * (0.50 + 0.90 * powder) + fwd * beer * 1.10)[..., None] \
         + light_colour[None, None, :] * (rim * (0.30 + 0.50 * fwd))[..., None] \
         + amb[None, None, :]
@@ -206,9 +207,9 @@ colour = colour * np.where(valid, (1.0 - (1.0 - transmittance) * fade), 1.0)[...
 
 # ---------------- sun disc, tonemap, gamma ---------------------------------------
 cosang = dirs @ SUN
-disc = (cosang > 0.99885).astype(float)
-glow = np.exp((cosang - 1.0) * 900.0)
-colour = colour + (disc * 60.0 + glow * 6.0)[..., None] * np.array([1.0, 0.97, 0.90])[None, None, :]
+disc = (cosang > 0.99980).astype(float)
+glow = np.exp((cosang - 1.0) * 2200.0)
+colour = colour + (disc * 12.0 + glow * 0.45)[..., None] * np.array([1.0, 0.97, 0.90])[None, None, :]
 
 colour = colour * 1.9
 colour = colour / (1.0 + colour)

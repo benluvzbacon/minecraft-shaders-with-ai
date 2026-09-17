@@ -186,15 +186,19 @@ give them:
 
 ### Fog
 
-`lib/fog.glsl` combines, in this order: vanilla's fog parameters (`fogMode`,
-`fogStart`, `fogEnd`, `fogDensity`, `fogShape`) scaled by `FOG_DENSITY`, an
-atmospheric term coloured by the sky and brightened towards the sun, extra fog at
-the edge of the render distance (`BORDER_FOG`), and a separate media fog for
-water and lava with `UNDERWATER_DENSITY`. The Nether and the End get their own
-colours and densities through `lib/dimension.glsl`. Iris does not apply vanilla
-fog on top of a shader pack, so the pack is responsible for all of it - including
-the additive passes (`gbuffers_lightning`, `gbuffers_spidereyes`), which get fog
-applied additively so they do not glow through it.
+`lib/fog.glsl` reproduces vanilla's distance fog exactly from the uniforms Iris
+provides (`fogMode`, `fogStart`, `fogEnd`, `fogDensity`, `fogShape`) - same
+EXP2 / linear curves Iris' own fallback shader uses - and adds nothing to the
+fog *factor*: no density multiplier, no border fog at the render distance.
+Distant terrain disappearing is Minecraft's behaviour and stays untouched.
+What the pack adds is colour, not opacity: an atmospheric term tinted by the
+sky and brightened towards the sun (sunrise and sunset haze), scaled by
+`ATMOSPHERE_STRENGTH`, plus a separate media fog for water and lava with
+`UNDERWATER_DENSITY`. The Nether and the End get their own fog colours through
+`lib/dimension.glsl`. Iris does not apply vanilla fog on top of a shader pack,
+so the pack is responsible for all of it - including the additive passes
+(`gbuffers_lightning`, `gbuffers_spidereyes`), which get fog applied additively
+so they do not glow through it.
 
 ### Post pipeline
 
@@ -287,7 +291,7 @@ option by hand switches the profile selector to `Custom`.
 `WATER_SHININESS`, `WATER_F0`
 
 ### Atmosphere
-`FOG_DENSITY`, `UNDERWATER_DENSITY`, `BORDER_FOG`, `STARS`, `STAR_DENSITY`,
+`ATMOSPHERE_STRENGTH`, `UNDERWATER_DENSITY`, `STARS`, `STAR_DENSITY`,
 `SUN_PATH_TILT`
 
 ### Clouds
@@ -301,6 +305,12 @@ option by hand switches the profile selector to `Custom`.
 `BLOOM`, `BLOOM_QUALITY`, `BLOOM_STRENGTH`, `BLOOM_THRESHOLD`, `TONEMAP_MODE`,
 `EXPOSURE`, `SATURATION`, `CONTRAST`, `GAMMA`, `VIGNETTE`, `VIGNETTE_STRENGTH`,
 `COLOR_GRADING`, `TEMPORAL_SMOOTHING`, `TEMPORAL_STRENGTH`, `DITHERING`
+
+The exposure chain is calibrated so that a white block in noon sunlight lands
+just above 1.0 in HDR: the ACES shoulder rolls highlights off gradually instead
+of clipping them, shadows keep the sky ambient (dark, never black), and the
+bloom threshold sits above everything except the sun, emissive blocks and
+specular glints, so ordinary terrain never glows.
 
 Every option has a label and a tooltip in `shaders/lang/en_us.lang`; numeric
 options are sliders, the mode and quality options cycle through labelled values.

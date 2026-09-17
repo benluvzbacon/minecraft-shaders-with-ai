@@ -51,10 +51,10 @@ vec3 hzAtmosphericFogColour(vec3 viewDir, vec3 playerPos) {
 #if HZ_HAS_SUN
 	float sunAlignment = max(dot(normalize(viewDir), hzSunDir()), 0.0);
 	float glow = pow(sunAlignment, 7.0) * (0.20 * hzDayFactor() + 0.55 * hzTwilightFactor());
-	colour += hzSunColour() * glow * (1.0 - rainStrength * 0.9);
+	colour += hzSunColour() * glow * (1.0 - rainStrength * 0.9) * ATMOSPHERE_STRENGTH;
 
 	float moonAlignment = max(dot(normalize(viewDir), hzMoonDir()), 0.0);
-	colour += hzMoonColour() * pow(moonAlignment, 12.0) * (0.10 * hzNightFactor());
+	colour += hzMoonColour() * pow(moonAlignment, 12.0) * (0.10 * hzNightFactor()) * ATMOSPHERE_STRENGTH;
 #endif
 
 #if HZ_DIM_ID == 1
@@ -70,20 +70,14 @@ vec3 hzAtmosphericFogColour(vec3 viewDir, vec3 playerPos) {
 	return colour;
 }
 
-// Shared fog factor: vanilla curve, user density, border fog and blindness.
-// 1.0 = no fog, 0.0 = fully fogged.
+// Shared fog factor: the vanilla curve, unmodified, plus blindness.
+// 1.0 = no fog, 0.0 = fully fogged. There is deliberately no density
+// multiplier and no border fog here: distance fog has to stay exactly what
+// Minecraft and the render distance setting make it, and the atmospheric
+// work lives in the fog *colour*, scaled by ATMOSPHERE_STRENGTH.
 float hzFogFactorFor(vec3 viewPos) {
 	float distance = hzFogDistance(viewPos);
 	float factor = hzVanillaFogFactor(distance);
-
-	// User controlled density, and a small per dimension correction.
-	factor = pow(factor, FOG_DENSITY * hzFogDensityMul());
-
-#ifdef BORDER_FOG
-	// Extra fog right at the render distance so that chunks appearing and
-	// disappearing are a lot less noticeable.
-	factor *= 1.0 - smoothstep(far * 0.60, far * 0.99, distance);
-#endif
 
 	// Blindness / darkness effect pulls everything towards black fog.
 	return factor * mix(1.0, 0.06, blindness);

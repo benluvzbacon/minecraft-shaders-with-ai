@@ -45,7 +45,7 @@ WAVES = np.array([
 TIME = 90.0
 SUN = np.array([0.18, 0.32, 0.93])      # low sun ahead, across the water
 SUN = SUN / np.linalg.norm(SUN)
-SUN_COLOUR = np.array([1.00, 0.94, 0.84]) * 1.30
+SUN_COLOUR = np.array([1.00, 0.94, 0.84]) * 1.05
 AMBIENT = np.array([0.32, 0.42, 0.60])
 CAM = np.array([0.0, 66.0, 0.0])
 PLANE_Y = 63.0
@@ -115,13 +115,13 @@ def sky_colour(direction):
     up = direction[..., 1]
     horizon_fade = np.power(1.0 - np.clip(up, 0.0, 1.0), 3.4)
     zenith = np.array([0.105, 0.275, 0.660])
-    horizon = np.array([0.560, 0.710, 0.910])
+    horizon = np.array([0.430, 0.580, 0.800])
     col = zenith[None, None, :] * (1 - horizon_fade)[..., None] \
         + horizon[None, None, :] * horizon_fade[..., None]
     cosang = direction @ SUN
-    disc = (cosang > 0.99885).astype(float)
-    glow = np.exp((cosang - 1.0) * 900.0)
-    col = col + (disc * 60.0 + glow * 6.0)[..., None] * np.array([1.0, 0.97, 0.90])[None, None, :]
+    disc = (cosang > 0.99980).astype(float)
+    glow = np.exp((cosang - 1.0) * 2200.0)
+    col = col + (disc * 12.0 + glow * 0.45)[..., None] * np.array([1.0, 0.97, 0.90])[None, None, :]
     return col
 
 

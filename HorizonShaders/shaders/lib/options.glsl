@@ -65,9 +65,11 @@
 #define STAR_DENSITY 1.0           //[0.5 1.0 1.5 2.0]
 
 // Extra fog at the very edge of the render distance, hides pop-in.
-#define BORDER_FOG
 
-#define FOG_DENSITY 1.0            //[0.5 0.75 1.0 1.5 2.0]
+// Strength of the atmospheric colour work: horizon and sunrise/sunset
+// tinting in the fog colour and the sky. It never touches the fog
+// factor, so it cannot reduce visibility.
+#define ATMOSPHERE_STRENGTH 1.0    //[0.0 0.5 1.0 1.5 2.0]
 #define UNDERWATER_DENSITY 1.0     //[0.5 0.75 1.0 1.5 2.0]
 
 //=================================< WATER >====================================
@@ -87,18 +89,18 @@
 //=================================< POST PROCESSING >==========================
 
 #define BLOOM
-#define BLOOM_STRENGTH 0.16        //[0.04 0.08 0.16 0.25 0.40]
+#define BLOOM_STRENGTH 0.08        //[0.04 0.08 0.16 0.25 0.40]
 #define BLOOM_QUALITY 1            //[0 1 2]
-#define BLOOM_THRESHOLD 1.0        //[0.6 0.8 1.0 1.4 2.0]
+#define BLOOM_THRESHOLD 1.4        //[0.6 0.8 1.0 1.4 2.0]
 
 #define TONEMAP_MODE 1             //[0 1 2]
 #define EXPOSURE 1.0               //[0.5 0.7 1.0 1.3 1.7 2.2]
-#define SATURATION 1.05            //[0.8 0.9 1.0 1.05 1.15 1.3]
-#define CONTRAST 1.0               //[0.9 0.95 1.0 1.05 1.1 1.2]
+#define SATURATION 1.0             //[0.8 0.9 1.0 1.05 1.15 1.3]
+#define CONTRAST 1.05              //[0.9 0.95 1.0 1.05 1.1 1.2]
 #define GAMMA 2.2                  //[1.8 2.0 2.2 2.4]
 
 #define VIGNETTE
-#define VIGNETTE_STRENGTH 0.25     //[0.10 0.25 0.40 0.60]
+#define VIGNETTE_STRENGTH 0.10     //[0.10 0.25 0.40 0.60]
 
 // Subtle colour grade (lift/gamma/gain tint), off by default.
 //#define COLOR_GRADING
