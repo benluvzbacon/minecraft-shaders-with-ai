@@ -1598,11 +1598,15 @@ def validate_glsl(
                     frag_path = workspace / (prefix + ".frag")
 
                     for path, stage in ((vert_path, "vertex"), (frag_path, "fragment")):
-                        # Iris consumes `const int colortexNFormat = X;` as a pack
-                        # directive and strips it before the GLSL compiler ever
-                        # sees the source (GLSL has no string type, so the format
-                        # rides on a const int). Blank the lines instead of
-                        # dropping them so glslang line numbers stay aligned.
+                        # `const int colortexNFormat = X;` is an Iris pack
+                        # directive the pack keeps inside a block comment: Iris'
+                        # ConstDirectiveParser scans fragment sources line by
+                        # line (comments included, JCPP keeps comments), while
+                        # the GL compiler never sees the bare format token -
+                        # RGBA16F is not a GLSL identifier and nothing strips
+                        # it. Blank any matching line anyway so an uncommented
+                        # copy still compiles; blanking (not dropping) keeps
+                        # glslang line numbers aligned.
                         path.write_text(
                             "\n".join(
                                 "" if FORMAT_CONST_RE.match(line.text) else line.text

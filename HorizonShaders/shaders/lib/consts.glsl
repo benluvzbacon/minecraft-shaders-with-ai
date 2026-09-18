@@ -40,18 +40,27 @@ const bool shadowcolor0Mipmap = false;
 
 //-------------------------------- render targets -------------------------------
 
-// Iris parses these as pack directives (string directives use `const int`
-// because GLSL has no string type) and strips them before compiling, so
-// the bare format token never reaches the GLSL compiler. tools/validate.py
-// strips them the same way. colortex3 carries the water surface depth that
-// deferred matches with a tight epsilon: in RGBA8 it quantises to 1/255 and
-// the match fails on real hardware, leaving the fallback tint.
+// The format values (RGBA16F, ...) are NOT valid GLSL identifiers, and Iris
+// never removes these lines from the compiled source - its directive parser
+// (ConstDirectiveParser#findDirectives) scans the fragment source line by
+// line, comments included, and the JCPP preprocessing pass keeps comments.
+// So by long-standing OptiFine/Iris convention (Complementary does the same
+// in lib/pipelineSettings.glsl) the directives live inside a block comment:
+// Iris finds and applies them, the GLSL compiler ignores them, and the
+// vertex stage - which Iris does not scan - never chokes on a bare token.
+//
+// These MUST be real lines inside /* */, each trimmed line starting with
+// `const int colortexNFormat = FORMAT;`. colortex3 carries the water surface
+// depth that the deferred pass matches against the depth buffer; at 16F the
+// comparison is exact enough for a tight match window.
+/*
 const int colortex0Format = RGBA16F;
 const int colortex1Format = RGBA16F;
 const int colortex2Format = RGBA16F;
 const int colortex3Format = RGBA16F;
 const int colortex4Format = RGBA16F;
 const int colortex5Format = RGBA16F;
+*/
 
 // colortex4 holds the previous frame for the temporal filter, so it must not be
 // cleared between frames. Every other buffer is cleared (the Iris default).
