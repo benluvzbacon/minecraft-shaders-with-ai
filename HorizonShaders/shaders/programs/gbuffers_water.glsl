@@ -106,7 +106,7 @@ void main() {
 	// deferred overwrites these pixels entirely when it runs, so the two
 	// never stack into a double tint.
 	float opacity = hzWaterOpacity(waterDepth);
-	gl_FragData[0] = vec4(hzWaterBody(waterDepth) * 2.4, opacity * 0.35);
+	gl_FragData[0] = vec4(hzWaterBody(waterDepth) * 1.6, opacity * 0.25);
 	gl_FragData[1] = hzEncodeWaterNormal(viewNormal, surfaceDepth, skyLight);
 	gl_FragData[2] = vec4(tint, foam);
 }

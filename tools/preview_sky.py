@@ -26,7 +26,7 @@ HZ_CLOUD_SCALE = 0.0045
 HZ_CLOUD_THICKNESS = 46.0
 HZ_CLOUD_EXTINCTION = 0.16          # per unit density per metre
 HZ_CIRRUS_ALTITUDE = 2.7
-HZ_CLOUD_MAX_DIST = 12000.0
+HZ_CLOUD_MAX_DIST = 8000.0
 
 CLOUD_DENSITY = float(sys.argv[1]) if len(sys.argv) > 1 else 0.62
 CLOUD_LAYERS = int(sys.argv[2]) if len(sys.argv) > 2 else 4
@@ -89,7 +89,7 @@ def field(px, py):
     uy = py * HZ_CLOUD_SCALE + WIND[1]
     wx = noise2(ux * 0.31 + 7.31, uy * 0.31 + 7.31) - 0.5
     wy = noise2(ux * 0.31 - 4.17, uy * 0.31 - 4.17) - 0.5
-    return fbm2(ux + wx * 0.60, uy + wy * 0.60, CLOUD_OCTAVES)
+    return fbm2(ux + wx * 0.35, uy + wy * 0.35, CLOUD_OCTAVES)
 
 
 def coverage(f):
@@ -198,7 +198,7 @@ transmittance = np.where(ok, transmittance * (1.0 - absorbed), transmittance)
 # ---------------- fades ----------------------------------------------------------
 df = np.clip((exit_ - HZ_CLOUD_MAX_DIST * 0.30) / (HZ_CLOUD_MAX_DIST * 0.62), 0, 1)
 distance_fade = 1.0 - df * df * (3 - 2 * df)
-hf = np.clip((np.abs(dy_) - 0.004) / 0.026, 0, 1)
+hf = np.clip((np.abs(dy_) - 0.012) / 0.038, 0, 1)
 horizon_fade_c = hf * hf * (3 - 2 * hf)
 fade = np.where(valid, distance_fade * horizon_fade_c, 0.0)
 
@@ -211,8 +211,8 @@ disc = (cosang > 0.99980).astype(float)
 glow = np.exp((cosang - 1.0) * 2200.0)
 colour = colour + (disc * 12.0 + glow * 0.45)[..., None] * np.array([1.0, 0.97, 0.90])[None, None, :]
 
-colour = colour * 1.9
-colour = colour / (1.0 + colour)
+colour = colour * 1.0                      # EXPOSURE
+colour = (colour * (1.0 + colour / 16.0)) / (1.0 + colour)   # Reinhard extended, white=4
 colour = np.clip(colour, 0, 1) ** (1 / 2.2)
 
 pixels = (colour * 255).astype(np.uint8)

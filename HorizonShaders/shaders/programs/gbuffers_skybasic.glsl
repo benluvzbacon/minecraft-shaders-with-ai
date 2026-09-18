@@ -42,7 +42,7 @@ void main() {
 	// direction of the pixel, whatever size vanilla builds the box at.
 	vec3 viewDir = normalize(hzViewPos);
 
-	vec3 colour = hzSky(viewDir, hzInterleavedJitter(gl_FragCoord.xy));
+	vec3 colour = hzSky(viewDir);
 
 	// Brightness and blindness affect the sky like everything else.
 	colour *= 1.0 + nightVision * 2.2;

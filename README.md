@@ -307,10 +307,16 @@ option by hand switches the profile selector to `Custom`.
 `COLOR_GRADING`, `TEMPORAL_SMOOTHING`, `TEMPORAL_STRENGTH`, `DITHERING`
 
 The exposure chain is calibrated so that a white block in noon sunlight lands
-just above 1.0 in HDR: the ACES shoulder rolls highlights off gradually instead
-of clipping them, shadows keep the sky ambient (dark, never black), and the
-bloom threshold sits above everything except the sun, emissive blocks and
-specular glints, so ordinary terrain never glows.
+just above 1.0 in HDR and the tone curve (extended Reinhard by default, ACES
+and Hable available) rolls highlights off gradually instead of clipping them.
+Shadows keep the sky ambient (darker, never black). Bloom, vignette, dithering
+and the temporal filter ship switched off: the base renderer is meant to look
+correct with no post effects at all, and each of them can be turned on once
+wanted - the bloom threshold then still sits above everything except the sun,
+emissive blocks and specular glints, so ordinary terrain never glows.
+Shadow filtering uses a fixed Poisson disk with no per-pixel randomisation,
+and the cloud deck integrates without per-pixel jitter: nothing in the pack
+puts static noise into the image.
 
 Every option has a label and a tooltip in `shaders/lang/en_us.lang`; numeric
 options are sliders, the mode and quality options cycle through labelled values.

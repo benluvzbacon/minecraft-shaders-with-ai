@@ -118,7 +118,7 @@ vec3 hzDirectLight() {
 	float storm = rainStrength;
 	// Noon direct light lands a lit white block just above 1.0 in HDR, so the
 	// tonemap shoulder - not the clamp - is what handles bright surfaces.
-	float sunStrength = mix(1.05, 0.28, storm);
+	float sunStrength = mix(1.00, 0.28, storm);
 	float moonStrength = 0.18 * (0.35 + 0.65 * hzMoonIllumination());
 
 	vec3 sun = hzSunColour() * (sunStrength * SUNLIGHT_STRENGTH);
@@ -145,7 +145,7 @@ vec3 hzAmbientColour() {
 	colour = mix(colour, twilight, hzTwilightFactor() * 0.65);
 	colour = mix(colour, vec3(0.28, 0.30, 0.34), rainStrength * 0.8);
 
-	return colour * (0.55 * AMBIENT_STRENGTH);
+	return colour * (0.90 * AMBIENT_STRENGTH);
 #elif HZ_DIM_ID == 1
 	// Nether: no sky at all, just the glow of the dimension itself. Iris
 	// reports a non zero ambientLight there.

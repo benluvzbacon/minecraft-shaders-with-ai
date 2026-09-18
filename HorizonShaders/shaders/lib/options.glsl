@@ -46,9 +46,9 @@
 
 // Extra light emitted by the item held in the player hands.
 #define HAND_LIGHT
+//#define CAVE_ADAPT
 
 // Sky light leaking into caves based on the eye brightness uniform.
-#define CAVE_ADAPT
 
 //=================================< ATMOSPHERE >===============================
 
@@ -88,18 +88,18 @@
 
 //=================================< POST PROCESSING >==========================
 
-#define BLOOM
+//#define BLOOM
 #define BLOOM_STRENGTH 0.08        //[0.04 0.08 0.16 0.25 0.40]
 #define BLOOM_QUALITY 1            //[0 1 2]
 #define BLOOM_THRESHOLD 1.4        //[0.6 0.8 1.0 1.4 2.0]
 
-#define TONEMAP_MODE 1             //[0 1 2]
+#define TONEMAP_MODE 0             //[0 1 2]
 #define EXPOSURE 1.0               //[0.5 0.7 1.0 1.3 1.7 2.2]
 #define SATURATION 1.0             //[0.8 0.9 1.0 1.05 1.15 1.3]
-#define CONTRAST 1.05              //[0.9 0.95 1.0 1.05 1.1 1.2]
+#define CONTRAST 1.0               //[0.9 0.95 1.0 1.05 1.1 1.2]
 #define GAMMA 2.2                  //[1.8 2.0 2.2 2.4]
 
-#define VIGNETTE
+//#define VIGNETTE
 #define VIGNETTE_STRENGTH 0.10     //[0.10 0.25 0.40 0.60]
 
 // Subtle colour grade (lift/gamma/gain tint), off by default.
@@ -107,9 +107,9 @@
 
 // Temporal upscaling-free anti flicker filter, needs a reprojection pass.
 //#define TEMPORAL_SMOOTHING
+//#define DITHERING
 #define TEMPORAL_STRENGTH 0.65     //[0.40 0.55 0.65 0.80 0.90]
 
-#define DITHERING
 
 //==============================================================================
 //  Derived (non option) values. These have no allowed-value comment on purpose,
@@ -135,7 +135,7 @@
 	#define CLOUD_LAYERS 4
 	#define CLOUD_OCTAVES 5
 #else
-	#define CLOUD_LAYERS 6
+	#define CLOUD_LAYERS 5
 	#define CLOUD_OCTAVES 6
 #endif
 

@@ -76,23 +76,17 @@ vec3 hzShadowAt(vec3 playerPos, vec3 viewNormal) {
 	float bias = hzShadowBias(distortion);
 	float receiverDepth = uvDepth.z - bias;
 
-	// Rotate the kernel per pixel to break up the regular disk pattern.
-	// gl_FragCoord only exists in the fragment stage, and this function has to
-	// compile in both stages because Iris compiles the whole include graph once
-	// per stage, so the vertex stage gets a world space seed instead. It never
-	// samples shadows, the alternative is only there to keep it valid.
-#if defined(HZ_STAGE_FRAGMENT)
-	mat2 rotation = hzRotate2(hzHash21(gl_FragCoord.xy) * HZ_TAU);
-#else
-	mat2 rotation = hzRotate2(hzHash21(playerPos.xz * 4.0) * HZ_TAU);
-#endif
+	// Fixed kernel, no per-pixel rotation: a random rotation angle per pixel
+	// is white noise in every penumbra and on every slightly self shadowed
+	// surface, which reads as static grain over the whole world. A stable
+	// Poisson disk is invisible by comparison.
 	float radius = hzShadowRadius(distortion);
 
 	float litOpaque = 0.0;
 
 #ifdef SOFT_SHADOWS
 	for (int i = 0; i < SHADOW_SAMPLES; i++) {
-		vec2 offset = rotation * HZ_POISSON[i] * radius;
+		vec2 offset = HZ_POISSON[i] * radius;
 		float occluderDepth = texture2D(shadowtex1, uvDepth.xy + offset).r;
 		litOpaque += step(receiverDepth, occluderDepth);
 	}

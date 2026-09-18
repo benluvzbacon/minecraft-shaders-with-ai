@@ -175,9 +175,9 @@ transmittance = np.exp(-absorption[None, :] * water_depth[..., None] * WATER_ABS
 bottom_light = SUN_COLOUR * max(SUN[1], 0.0) * 0.8 + AMBIENT * 0.7
 refracted = sand[None, :] * bottom_light[None, :] * transmittance
 
-opacity = 1.0 - np.exp(-water_depth * (0.55 * WATER_ABSORPTION + WATER_TURBIDITY * 1.6))
-shallow = np.array([0.055, 0.300, 0.320])
-deep = np.array([0.012, 0.085, 0.130])
+opacity = 1.0 - np.exp(-water_depth * (0.45 * WATER_ABSORPTION + WATER_TURBIDITY * 1.2))
+shallow = np.array([0.045, 0.220, 0.240])
+deep = np.array([0.010, 0.060, 0.090])
 toward_deep = 1.0 - np.exp(-water_depth * 0.35)
 density = 1.0 - np.exp(-water_depth * WATER_TURBIDITY * 2.2)
 body = (shallow[None, :] * (1 - toward_deep)[..., None] + deep[None, :] * toward_deep[..., None]) \
@@ -193,7 +193,7 @@ view_dir = wd
 cos_theta = np.clip((-view_dir * normal).sum(-1), 0.0, 1.0)
 xx = 1.0 - cos_theta
 fresnel = WATER_F0 + (1.0 - WATER_F0) * xx * xx * xx * xx * xx
-fresnel = np.maximum(fresnel, 0.14 + 0.10 * (1.0 - cos_theta))
+fresnel = np.maximum(fresnel, 0.10 + 0.08 * (1.0 - cos_theta))
 
 refl_dir = view_dir - 2.0 * ((view_dir * normal).sum(-1)[..., None] * normal)
 reflection = sky_colour(refl_dir)
@@ -203,7 +203,7 @@ half_vec = SUN[None, :] - view_dir
 half_vec /= np.linalg.norm(half_vec, axis=-1, keepdims=True)
 ndh = np.clip((normal * half_vec).sum(-1), 0.0, 1.0)
 spec = ndh ** WATER_SHININESS + (ndh ** (WATER_SHININESS * 0.22)) * 0.30
-wcol += SUN_COLOUR[None, :] * (spec * 2.2 * np.clip(ndl, 0, 1))[..., None]
+wcol += SUN_COLOUR[None, :] * (spec * 1.2 * np.clip(ndl, 0, 1))[..., None]
 
 crest = sstep(0.08, 0.26, height)
 crest_back = np.clip(view_dir @ SUN, 0.0, 1.0) ** 2
@@ -217,8 +217,8 @@ wcol = wcol * (1 - foam * 0.85)[..., None] + (np.array([0.85, 0.90, 0.92]) * sur
 colour[wmask] = wcol
 
 # ---------------- tonemap, gamma, png --------------------------------------------
-colour = colour * 1.9
-colour = colour / (1.0 + colour)
+colour = colour * 1.0                      # EXPOSURE
+colour = (colour * (1.0 + colour / 16.0)) / (1.0 + colour)   # Reinhard extended, white=4
 colour = np.clip(colour, 0, 1) ** (1 / 2.2)
 pixels = (colour * 255).astype(np.uint8)
 
