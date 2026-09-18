@@ -103,7 +103,9 @@ vec3 hzResolveWater(vec2 uv, vec3 background, vec3 viewPos, vec3 playerPos,
 	// surface literally invisible when you look straight down at it. The
 	// floor keeps a sheen on every pixel of water, and still reaches 1 at
 	// grazing angles like the real term does.
-	fresnel = max(fresnel, 0.12 + 0.08 * (1.0 - cosTheta));
+	// The reference look is a glossy surface: even looking straight down the
+	// water mirrors a good slice of sky.
+	fresnel = max(fresnel, 0.22 + 0.10 * (1.0 - cosTheta));
 
 #ifdef WATER_REFLECTION
 	{
@@ -125,7 +127,7 @@ vec3 hzResolveWater(vec2 uv, vec3 background, vec3 viewPos, vec3 playerPos,
 		// sunlight on water.
 		float specular = hzSpecular(normal, -viewDir, hzLightDir(), WATER_SHININESS)
 			+ hzSpecular(normal, -viewDir, hzLightDir(), WATER_SHININESS * 0.22) * 0.30;
-		colour += hzDirectLight() * (specular * 1.8 * shadow * hzSkyLightCurve(skyLightLevel));
+		colour += hzDirectLight() * (specular * 2.6 * shadow * hzSkyLightCurve(skyLightLevel));
 	}
 #endif
 
@@ -138,7 +140,7 @@ vec3 hzResolveWater(vec2 uv, vec3 background, vec3 viewPos, vec3 playerPos,
 
 	//---------------------------------------------------------------------- foam --
 	float foam = tintData.a;
-	colour = mix(colour, vec3(0.92, 0.96, 0.98) * surfaceLight, foam * 0.90);
+	colour = mix(colour, vec3(0.92, 0.96, 0.98) * surfaceLight, foam * 0.95);
 
 	return hzApplyFog(colour, viewPos, playerPos);
 }
@@ -160,7 +162,8 @@ void main() {
 	// nothing was drawn over the surface afterwards - the first person hand and
 	// depth writing particles are rendered after the translucent terrain, and
 	// those pixels belong to them, not to the water.
-	if (waterData.z > 0.0 && abs(hzLinearDepth01(depth) - waterData.z) < 0.004) {
+	float surfaceDepth01 = hzLinearDepth01(depth);
+	if (waterData.z > 0.0 && surfaceDepth01 >= waterData.z - 0.01 && surfaceDepth01 <= waterData.z + 0.05) {
 		colour = hzResolveWater(uv, colour, viewPos, playerPos, waterData,
 		                        texture2D(colortex5, uv), depth);
 	}

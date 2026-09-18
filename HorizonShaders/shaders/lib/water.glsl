@@ -98,15 +98,15 @@ vec3 hzWaterTransmittance(float depth) {
 // should read as a surface with a body under it, not as a glass sheet
 // stretched over the river bed.
 float hzWaterOpacity(float depth) {
-	return 1.0 - exp(-max(depth, 0.0) * (0.40 * WATER_ABSORPTION + WATER_TURBIDITY * 1.2));
+	return 1.0 - exp(-max(depth, 0.0) * (0.30 * WATER_ABSORPTION + WATER_TURBIDITY * 1.2));
 }
 
 // Colour of the water itself: bright turquoise in the shallows where the
 // bottom still lights it, deep teal where the light is gone.
 vec3 hzWaterBody(float depth) {
 	// Picture-book water: bright aqua shallows into a rich crayon blue.
-	vec3 shallow = vec3(0.060, 0.340, 0.380);
-	vec3 deep = vec3(0.015, 0.100, 0.220);
+	vec3 shallow = vec3(0.090, 0.420, 0.450);
+	vec3 deep = vec3(0.020, 0.130, 0.380);
 	float towardDeep = 1.0 - exp(-max(depth, 0.0) * 0.35);
 	float density = 1.0 - exp(-max(depth, 0.0) * WATER_TURBIDITY * 2.2);
 
@@ -122,7 +122,7 @@ float hzFoam(float depth, float height) {
 #else
 	float shore = 1.0 - smoothstep(0.05, 0.42, depth);
 	float crest = smoothstep(0.14, 0.34, height + rainStrength * 0.12);
-	return hzClamp01(shore * 0.75 + crest * shore * 1.4 + crest * 0.06);
+	return hzClamp01(shore * 0.90 + crest * shore * 1.4 + crest * 0.06);
 #endif
 }
 

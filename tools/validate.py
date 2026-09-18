@@ -69,6 +69,8 @@ DEFAULT_GLSLANG = (
 # Regular expressions. They mirror the parsers named above, not full GLSL.
 # ---------------------------------------------------------------------------
 
+FORMAT_CONST_RE = re.compile(r"const int colortex\d+Format = \w+;$")
+
 INCLUDE_RE = re.compile(r'^[ \t]*#[ \t]*include[ \t]+"(?P<path>[^"]*)"[ \t]*(?://.*)?$')
 VERSION_RE = re.compile(r'^[ \t]*#[ \t]*version\b.*$')
 
@@ -1596,8 +1598,16 @@ def validate_glsl(
                     frag_path = workspace / (prefix + ".frag")
 
                     for path, stage in ((vert_path, "vertex"), (frag_path, "fragment")):
+                        # Iris consumes `const int colortexNFormat = X;` as a pack
+                        # directive and strips it before the GLSL compiler ever
+                        # sees the source (GLSL has no string type, so the format
+                        # rides on a const int). Blank the lines instead of
+                        # dropping them so glslang line numbers stay aligned.
                         path.write_text(
-                            "\n".join(line.text for line in stage_lines[stage]) + "\n",
+                            "\n".join(
+                                "" if FORMAT_CONST_RE.match(line.text) else line.text
+                                for line in stage_lines[stage]
+                            ) + "\n",
                             encoding="utf-8",
                         )
 

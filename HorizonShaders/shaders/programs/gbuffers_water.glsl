@@ -101,12 +101,35 @@ void main() {
 	float surfaceDepth = hzLinearDepth01(gl_FragCoord.z);
 	float skyLight = hzLightLevels(hzLmCoord).y;
 
-	// Fallback body: with vanilla blending this leaves a tinted, partly
-	// transparent sheet of water even if no later pass resolves the surface.
-	// deferred overwrites these pixels entirely when it runs, so the two
-	// never stack into a double tint.
+	// Full surface shading right here, blended with vanilla alpha: even if
+	// the deferred resolve never claims these pixels, water still shows a
+	// glossy sky-reflecting surface instead of a flat tint. The reflection
+	// is the analytic sky (gradient plus discs, no clouds) which is cheap;
+	// deferred replaces all of this with the full resolve - cloud
+	// reflections and screen space refraction included - when it runs.
 	float opacity = hzWaterOpacity(waterDepth);
-	gl_FragData[0] = vec4(hzWaterBody(waterDepth) * 1.6, opacity * 0.25);
+	vec3 viewDir = normalize(hzViewPos);
+	vec3 shadowOut;
+	vec3 surfaceLight = hzLightingSkyOnly(hzPlayerPos, viewNormal, skyLight, shadowOut);
+
+	vec3 colour = hzWaterBody(waterDepth) * surfaceLight * (0.45 + 0.55 * opacity);
+
+	float cosTheta = max(dot(-viewDir, viewNormal), 0.0);
+	float fresnel = max(hzFresnel(cosTheta, WATER_F0), 0.22 + 0.10 * (1.0 - cosTheta));
+	vec3 reflected = reflect(viewDir, viewNormal);
+	vec3 sheen = hzSkyGradient(reflected) + hzSunDisc(reflected) + hzMoonDisc(reflected);
+	colour = mix(colour, sheen, fresnel);
+
+#if HZ_HAS_SUN || HZ_DIM_ID == 2
+	float spec = hzSpecular(viewNormal, -viewDir, hzLightDir(), WATER_SHININESS)
+		+ hzSpecular(viewNormal, -viewDir, hzLightDir(), WATER_SHININESS * 0.22) * 0.30;
+	colour += hzDirectLight() * (spec * 2.6 * hzSkyLightCurve(skyLight));
+#endif
+
+	colour = mix(colour, vec3(0.92, 0.96, 0.98) * surfaceLight, foam * 0.95);
+
+	float alpha = mix(0.45, 0.90, opacity);
+	gl_FragData[0] = vec4(colour, alpha);
 	gl_FragData[1] = hzEncodeWaterNormal(viewNormal, surfaceDepth, skyLight);
 	gl_FragData[2] = vec4(tint, foam);
 }
