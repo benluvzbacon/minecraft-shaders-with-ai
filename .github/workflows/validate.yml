@@ -1,0 +1,60 @@
+name: Validate and package
+
+# Runs on every push (to any branch), on pull requests, and on demand from the
+# Actions tab. The last step uploads the shader pack archive, so a green run of
+# this workflow always produces a zip that can be dropped into
+# .minecraft/shaderpacks.
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    name: Validate GLSL and package the shader pack
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      # Ubuntu ships glslang as glslang-tools; older releases name the binary
+      # glslangValidator, newer ones just glslang. tools/validate.py accepts both.
+      - name: Install the glslang validator
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends glslang-tools
+          if command -v glslang >/dev/null 2>&1; then
+            glslang --version
+          else
+            glslangValidator --version
+          fi
+
+      # Compiles and links every program of every dimension folder across five
+      # option configurations, and checks the pack layout, the shader options,
+      # the uniforms, the samplers, the render target directives, the generated
+      # wrappers, shaders.properties, block.properties and the language file.
+      - name: Validate the pack
+        run: python3 tools/validate.py
+
+      - name: Build the shader pack archive
+        run: python3 tools/build_zip.py
+
+      - name: Validate the archive layout
+        run: python3 tools/validate.py --skip-glsl --zip dist/HorizonShaders.zip
+
+      - name: Upload the shader pack
+        uses: actions/upload-artifact@v4
+        with:
+          name: HorizonShaders
+          path: dist/HorizonShaders.zip
+          if-no-files-found: error
