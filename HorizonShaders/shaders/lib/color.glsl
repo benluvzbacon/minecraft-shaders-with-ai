@@ -99,6 +99,13 @@ vec3 hzGrade(vec3 color) {
 	color = hzCreativeGrade(color);
 #endif
 
+	// The house look: a pastel lift in the shadows (nothing ever goes black),
+	// a whisper of gold in the highlights, then the user's saturation and
+	// contrast on top. Deliberately constant - this is the pack's colour,
+	// not an optional grade.
+	color = color + vec3(0.012, 0.014, 0.024) * (1.0 - hzClamp01(color));
+	color *= vec3(1.04, 1.00, 0.94);
+
 	color = hzSaturation(color, SATURATION);
 	color = hzContrast(color, CONTRAST);
 

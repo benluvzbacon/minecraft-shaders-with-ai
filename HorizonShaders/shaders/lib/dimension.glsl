@@ -97,7 +97,7 @@ float hzMoonIllumination() {
 //--------------------------------- light colour -------------------------------
 
 vec3 hzSunColour() {
-	vec3 noon = vec3(1.00, 0.94, 0.84);
+	vec3 noon = vec3(1.00, 0.90, 0.72);   // permanently golden-hour warm
 	vec3 horizon = vec3(1.00, 0.52, 0.26);
 	vec3 colour = mix(noon, horizon, hzTwilightFactor());
 
@@ -137,7 +137,7 @@ vec3 hzDirectLight() {
 // Sky / ambient colour used for the hemisphere ambient term.
 vec3 hzAmbientColour() {
 #if HZ_DIM_ID == 0
-	vec3 day = vec3(0.42, 0.58, 0.86);
+	vec3 day = vec3(0.45, 0.58, 0.92);   // periwinkle shadow light
 	vec3 twilight = vec3(0.46, 0.36, 0.42);
 	vec3 night = vec3(0.075, 0.10, 0.17);
 

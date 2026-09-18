@@ -94,7 +94,7 @@ def field(px, py):
 
 def coverage(f):
     threshold = 0.68 + (0.42 - 0.68) * CLOUD_DENSITY
-    return sstep(threshold, threshold + 0.15, f)
+    return sstep(threshold, threshold + 0.18, f)
 
 
 # ---------------- camera rays -------------------------------------------------
@@ -119,8 +119,8 @@ dirs = dirs / np.linalg.norm(dirs, axis=-1, keepdims=True)
 # ---------------- sky gradient -------------------------------------------------
 up = dirs[..., 1]
 horizon_fade = np.power(1.0 - np.clip(up, 0.0, 1.0), 3.4)
-zenith = np.array([0.105, 0.275, 0.660])
-horizon = np.array([0.430, 0.580, 0.800])
+zenith = np.array([0.085, 0.290, 0.760])
+horizon = np.array([0.520, 0.700, 0.900])
 colour = zenith[None, None, :] * (1 - horizon_fade)[..., None] \
     + horizon[None, None, :] * horizon_fade[..., None]
 
@@ -138,7 +138,7 @@ exit_ = np.minimum(np.maximum(t_base, t_top), HZ_CLOUD_MAX_DIST)
 valid = valid & (exit_ > enter)
 
 sun_up = max(SUN[1], 0.16)
-light_colour = np.array([1.00, 0.94, 0.84]) * 0.95
+light_colour = np.array([1.00, 0.90, 0.72]) * 1.15
 step_length = np.maximum(exit_ - enter, 0.0) / CLOUD_LAYERS
 
 for i in range(CLOUD_LAYERS):
@@ -168,7 +168,7 @@ for i in range(CLOUD_LAYERS):
 
     rim = sstep(0.0, 0.22, cov) * (1.0 - sstep(0.22, 0.60, cov))
 
-    amb = np.array([0.16, 0.20, 0.28]) * (1 - height) + np.array([0.40, 0.50, 0.66]) * height
+    amb = np.array([0.30, 0.34, 0.44]) * (1 - height) + np.array([0.52, 0.62, 0.80]) * height
     luminance = light_colour[None, None, :] * (beer * (0.50 + 0.90 * powder) + fwd * beer * 1.10)[..., None] \
         + light_colour[None, None, :] * (rim * (0.30 + 0.50 * fwd))[..., None] \
         + amb[None, None, :]
@@ -213,6 +213,11 @@ colour = colour + (disc * 12.0 + glow * 0.45)[..., None] * np.array([1.0, 0.97, 
 
 colour = colour * 1.0                      # EXPOSURE
 colour = (colour * (1.0 + colour / 16.0)) / (1.0 + colour)   # Reinhard extended, white=4
+colour = colour + np.array([0.012, 0.014, 0.024]) * (1 - np.clip(colour, 0, 1))
+colour = colour * np.array([1.04, 1.00, 0.94])
+lum = colour @ np.array([0.2126, 0.7152, 0.0722])
+colour = lum[..., None] + (colour - lum[..., None]) * 1.15   # SATURATION
+colour = (colour - 0.5) * 0.95 + 0.5                          # CONTRAST
 colour = np.clip(colour, 0, 1) ** (1 / 2.2)
 
 pixels = (colour * 255).astype(np.uint8)

@@ -57,8 +57,10 @@ vec3 hzSkyGradient(vec3 viewDir) {
 	// dimension haze.
 	return hzFogColour();
 #else
-	vec3 zenith = mix(vec3(0.0055, 0.0105, 0.0270), vec3(0.105, 0.275, 0.660), hzDayFactor());
-	vec3 horizon = mix(vec3(0.0260, 0.0400, 0.0780), vec3(0.430, 0.580, 0.800), hzDayFactor());
+	// Storybook sky: a saturated candy blue overhead fading to a bright,
+	// slightly warm horizon.
+	vec3 zenith = mix(vec3(0.0055, 0.0105, 0.0270), vec3(0.085, 0.290, 0.760), hzDayFactor());
+	vec3 horizon = mix(vec3(0.0260, 0.0400, 0.0780), vec3(0.520, 0.700, 0.900), hzDayFactor());
 
 	zenith = mix(zenith, vec3(0.140, 0.150, 0.390), hzTwilightFactor() * 0.80);
 	horizon = mix(horizon, vec3(0.920, 0.430, 0.190), hzTwilightFactor() * 0.95);
@@ -259,13 +261,13 @@ float hzCloudField(vec2 worldXZ) {
 float hzCloudCoverage(float field) {
 	float threshold = mix(0.68, 0.42, CLOUD_DENSITY);
 
-	return smoothstep(threshold, threshold + 0.15, field);
+	return smoothstep(threshold, threshold + 0.18, field);
 }
 
 // Colour of the light that illuminates the deck: the sun by day, the moon and
 // the night sky after dusk, a grey sheet in a storm.
 vec3 hzCloudLightColour() {
-	vec3 day = hzSunColour() * 0.95;
+	vec3 day = hzSunColour() * 1.15;
 	vec3 night = vec3(0.135, 0.165, 0.260) * (0.35 + 0.65 * hzMoonIllumination());
 	vec3 colour = mix(night, day, hzDayFactor());
 
@@ -274,7 +276,7 @@ vec3 hzCloudLightColour() {
 
 // Ambient the deck is bathed in, brighter towards the top of the slab.
 vec3 hzCloudAmbient(float height) {
-	vec3 day = mix(vec3(0.16, 0.20, 0.28), vec3(0.40, 0.50, 0.66), height);
+	vec3 day = mix(vec3(0.30, 0.34, 0.44), vec3(0.52, 0.62, 0.80), height);
 	vec3 night = mix(vec3(0.020, 0.024, 0.038), vec3(0.055, 0.065, 0.100), height);
 
 	return mix(night, day, hzDayFactor());

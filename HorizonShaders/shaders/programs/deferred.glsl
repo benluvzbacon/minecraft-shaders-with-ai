@@ -103,7 +103,7 @@ vec3 hzResolveWater(vec2 uv, vec3 background, vec3 viewPos, vec3 playerPos,
 	// surface literally invisible when you look straight down at it. The
 	// floor keeps a sheen on every pixel of water, and still reaches 1 at
 	// grazing angles like the real term does.
-	fresnel = max(fresnel, 0.10 + 0.08 * (1.0 - cosTheta));
+	fresnel = max(fresnel, 0.12 + 0.08 * (1.0 - cosTheta));
 
 #ifdef WATER_REFLECTION
 	{
@@ -125,7 +125,7 @@ vec3 hzResolveWater(vec2 uv, vec3 background, vec3 viewPos, vec3 playerPos,
 		// sunlight on water.
 		float specular = hzSpecular(normal, -viewDir, hzLightDir(), WATER_SHININESS)
 			+ hzSpecular(normal, -viewDir, hzLightDir(), WATER_SHININESS * 0.22) * 0.30;
-		colour += hzDirectLight() * (specular * 1.2 * shadow * hzSkyLightCurve(skyLightLevel));
+		colour += hzDirectLight() * (specular * 1.8 * shadow * hzSkyLightCurve(skyLightLevel));
 	}
 #endif
 
@@ -138,7 +138,7 @@ vec3 hzResolveWater(vec2 uv, vec3 background, vec3 viewPos, vec3 playerPos,
 
 	//---------------------------------------------------------------------- foam --
 	float foam = tintData.a;
-	colour = mix(colour, vec3(0.85, 0.90, 0.92) * surfaceLight, foam * 0.85);
+	colour = mix(colour, vec3(0.92, 0.96, 0.98) * surfaceLight, foam * 0.90);
 
 	return hzApplyFog(colour, viewPos, playerPos);
 }

@@ -309,11 +309,13 @@ option by hand switches the profile selector to `Custom`.
 The exposure chain is calibrated so that a white block in noon sunlight lands
 just above 1.0 in HDR and the tone curve (extended Reinhard by default, ACES
 and Hable available) rolls highlights off gradually instead of clipping them.
-Shadows keep the sky ambient (darker, never black). Bloom, vignette, dithering
-and the temporal filter ship switched off: the base renderer is meant to look
-correct with no post effects at all, and each of them can be turned on once
-wanted - the bloom threshold then still sits above everything except the sun,
-emissive blocks and specular glints, so ordinary terrain never glows.
+Shadows keep the sky ambient (darker, never black). Vignette, dithering and the temporal
+filter ship switched off; bloom ships on at a low strength with its threshold
+at 1.1, so only the sun, emissive blocks and water glints carry a soft glow.
+The house colour is a constant, deliberately gentle grade in `hzGrade`:
+a pastel lift in the shadows, a whisper of gold in the highlights, saturation
+1.15 and contrast 0.95 - a storybook look that still keeps grass green and
+stone grey.
 Shadow filtering uses a fixed Poisson disk with no per-pixel randomisation,
 and the cloud deck integrates without per-pixel jitter: nothing in the pack
 puts static noise into the image.

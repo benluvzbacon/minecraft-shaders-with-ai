@@ -88,15 +88,15 @@
 
 //=================================< POST PROCESSING >==========================
 
-//#define BLOOM
-#define BLOOM_STRENGTH 0.08        //[0.04 0.08 0.16 0.25 0.40]
+#define BLOOM
+#define BLOOM_STRENGTH 0.12        //[0.04 0.08 0.12 0.16 0.25 0.40]
 #define BLOOM_QUALITY 1            //[0 1 2]
-#define BLOOM_THRESHOLD 1.4        //[0.6 0.8 1.0 1.4 2.0]
+#define BLOOM_THRESHOLD 1.1        //[0.6 0.8 1.0 1.1 1.4 2.0]
 
 #define TONEMAP_MODE 0             //[0 1 2]
 #define EXPOSURE 1.0               //[0.5 0.7 1.0 1.3 1.7 2.2]
-#define SATURATION 1.0             //[0.8 0.9 1.0 1.05 1.15 1.3]
-#define CONTRAST 1.0               //[0.9 0.95 1.0 1.05 1.1 1.2]
+#define SATURATION 1.15            //[0.8 0.9 1.0 1.05 1.15 1.3]
+#define CONTRAST 0.95              //[0.9 0.95 1.0 1.05 1.1 1.2]
 #define GAMMA 2.2                  //[1.8 2.0 2.2 2.4]
 
 //#define VIGNETTE

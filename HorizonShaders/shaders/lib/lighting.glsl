@@ -46,7 +46,7 @@ vec3 hzBlockLightColour() {
 // Minimum light level so that fully dark areas are never crushed to pure black.
 // Honours the vanilla brightness slider, night vision and blindness.
 float hzAmbientFloor() {
-	float floorLight = 0.022 + screenBrightness * 0.055;
+	float floorLight = 0.030 + screenBrightness * 0.055;
 
 #ifdef CAVE_ADAPT
 	// When the camera itself is in the dark, lift the floor a little so that

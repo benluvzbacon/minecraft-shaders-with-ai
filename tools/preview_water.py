@@ -45,7 +45,7 @@ WAVES = np.array([
 TIME = 90.0
 SUN = np.array([0.18, 0.32, 0.93])      # low sun ahead, across the water
 SUN = SUN / np.linalg.norm(SUN)
-SUN_COLOUR = np.array([1.00, 0.94, 0.84]) * 1.05
+SUN_COLOUR = np.array([1.00, 0.90, 0.72]) * 1.00
 AMBIENT = np.array([0.32, 0.42, 0.60])
 CAM = np.array([0.0, 66.0, 0.0])
 PLANE_Y = 63.0
@@ -114,8 +114,8 @@ def wave_gradient(x, z, view_distance):
 def sky_colour(direction):
     up = direction[..., 1]
     horizon_fade = np.power(1.0 - np.clip(up, 0.0, 1.0), 3.4)
-    zenith = np.array([0.105, 0.275, 0.660])
-    horizon = np.array([0.430, 0.580, 0.800])
+    zenith = np.array([0.085, 0.290, 0.760])
+    horizon = np.array([0.520, 0.700, 0.900])
     col = zenith[None, None, :] * (1 - horizon_fade)[..., None] \
         + horizon[None, None, :] * horizon_fade[..., None]
     cosang = direction @ SUN
@@ -175,9 +175,9 @@ transmittance = np.exp(-absorption[None, :] * water_depth[..., None] * WATER_ABS
 bottom_light = SUN_COLOUR * max(SUN[1], 0.0) * 0.8 + AMBIENT * 0.7
 refracted = sand[None, :] * bottom_light[None, :] * transmittance
 
-opacity = 1.0 - np.exp(-water_depth * (0.45 * WATER_ABSORPTION + WATER_TURBIDITY * 1.2))
-shallow = np.array([0.045, 0.220, 0.240])
-deep = np.array([0.010, 0.060, 0.090])
+opacity = 1.0 - np.exp(-water_depth * (0.40 * WATER_ABSORPTION + WATER_TURBIDITY * 1.2))
+shallow = np.array([0.060, 0.340, 0.380])
+deep = np.array([0.015, 0.100, 0.220])
 toward_deep = 1.0 - np.exp(-water_depth * 0.35)
 density = 1.0 - np.exp(-water_depth * WATER_TURBIDITY * 2.2)
 body = (shallow[None, :] * (1 - toward_deep)[..., None] + deep[None, :] * toward_deep[..., None]) \
@@ -193,7 +193,7 @@ view_dir = wd
 cos_theta = np.clip((-view_dir * normal).sum(-1), 0.0, 1.0)
 xx = 1.0 - cos_theta
 fresnel = WATER_F0 + (1.0 - WATER_F0) * xx * xx * xx * xx * xx
-fresnel = np.maximum(fresnel, 0.10 + 0.08 * (1.0 - cos_theta))
+fresnel = np.maximum(fresnel, 0.12 + 0.08 * (1.0 - cos_theta))
 
 refl_dir = view_dir - 2.0 * ((view_dir * normal).sum(-1)[..., None] * normal)
 reflection = sky_colour(refl_dir)
@@ -203,7 +203,7 @@ half_vec = SUN[None, :] - view_dir
 half_vec /= np.linalg.norm(half_vec, axis=-1, keepdims=True)
 ndh = np.clip((normal * half_vec).sum(-1), 0.0, 1.0)
 spec = ndh ** WATER_SHININESS + (ndh ** (WATER_SHININESS * 0.22)) * 0.30
-wcol += SUN_COLOUR[None, :] * (spec * 1.2 * np.clip(ndl, 0, 1))[..., None]
+wcol += SUN_COLOUR[None, :] * (spec * 1.8 * np.clip(ndl, 0, 1))[..., None]
 
 crest = sstep(0.08, 0.26, height)
 crest_back = np.clip(view_dir @ SUN, 0.0, 1.0) ** 2
@@ -219,6 +219,11 @@ colour[wmask] = wcol
 # ---------------- tonemap, gamma, png --------------------------------------------
 colour = colour * 1.0                      # EXPOSURE
 colour = (colour * (1.0 + colour / 16.0)) / (1.0 + colour)   # Reinhard extended, white=4
+colour = colour + np.array([0.012, 0.014, 0.024]) * (1 - np.clip(colour, 0, 1))
+colour = colour * np.array([1.04, 1.00, 0.94])
+lum = colour @ np.array([0.2126, 0.7152, 0.0722])
+colour = lum[..., None] + (colour - lum[..., None]) * 1.15   # SATURATION
+colour = (colour - 0.5) * 0.95 + 0.5                          # CONTRAST
 colour = np.clip(colour, 0, 1) ** (1 / 2.2)
 pixels = (colour * 255).astype(np.uint8)
 
